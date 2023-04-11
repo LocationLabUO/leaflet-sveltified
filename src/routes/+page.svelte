@@ -1,37 +1,56 @@
 <script lang="ts">
-	import { Icon, LeafletMap, TileLayer, type MapEvents } from '$lib';
-	import Marker from '$lib/layers/ui/Marker.svelte';
+	import { Icon, LeafletMap, Marker, MarkerClusterGroup, TileLayer } from '$lib';
+	import Popup from '$lib/layers/ui/Popup.svelte';
 
 	let container: HTMLElement;
 
-	function handle(e: MapEvents['zoomend']) {
-		console.log(e);
+	let showMap: boolean = false;
+
+	function getRandomLatLng(): [number, number] {
+		return [-90 + 180 * Math.random(), -180 + 360 * Math.random()];
+	}
+
+	async function getPoints() {
+		const points: [number, number][] = [];
+		for (let i = 0; i < 1000; i = i + 1) {
+			points.push(getRandomLatLng());
+		}
+		console.log(points);
+		return points;
 	}
 </script>
 
-<div class="container" bind:this={container}>
-	{#if container}
-		<LeafletMap
-			options={{
-				center: [0, 0],
-				zoom: 3
-			}}
-			{container}
-			events={['zoomend']}
-			on:zoomend={(e) => handle(e.detail)}
-		>
-			<TileLayer
-				url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`}
+{#await getPoints() then points}
+	<div class="container" bind:this={container}>
+		{#if showMap && container}
+			<LeafletMap
 				options={{
-					maxZoom: 4
+					center: [0, 0],
+					zoom: 3
 				}}
-			/>
-			<Marker latLng={[0, 0]}>
-				<Icon />
-			</Marker>
-		</LeafletMap>
-	{/if}
-</div>
+				{container}
+			>
+				<TileLayer
+					url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`}
+					options={{
+						maxZoom: 18
+					}}
+				/>
+				<MarkerClusterGroup options={{}}>
+					{#each points as p}
+						<Marker latLng={p}>
+							<Icon />
+							<Popup>
+								<div>{p}</div>
+							</Popup>
+						</Marker>
+					{/each}
+				</MarkerClusterGroup>
+			</LeafletMap>
+		{/if}
+	</div>
+	<button on:click={() => (showMap = !showMap)}> Clicky </button>
+{/await}
 
 <style>
 	.container {
