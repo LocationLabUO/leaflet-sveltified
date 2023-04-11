@@ -4,14 +4,11 @@
 name: Node.js Package
 
 on:
-  push:
-    branch: [main]
+  release:
+    types: [created]
 
 jobs:
   publish-npm:
-    env:
-      TEST: 'hello'
-      NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,7 +18,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: 'locationlabuo'
       - run: npm ci
-      - run: cat /home/runner/work/_temp/.npmrc
-      - run: echo $NODE_AUTH_TOKEN
-      - run: env
       - run: npm publish --access public
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
