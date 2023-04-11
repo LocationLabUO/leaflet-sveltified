@@ -1,5 +1,5 @@
 {
-	"name": "@locationlabuo/leaflet-sveltified",
+	"name": "leaflet-sveltified",
 	"version": "0.0.2",
 	"license": "MIT",
 	"keywords": [
@@ -14,7 +14,7 @@
 	"description": "Svelte Wrapper for Leaflet",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/locationlabuo/leaflet-sveltified.git"
+		"url": "https://github.com/locationlabuo/leaflet-sveltified.git"
 	},
 	"scripts": {
 		"dev": "vite dev",
