@@ -17,6 +17,7 @@
 		"url": "https://github.com/locationlabuo/leaflet-sveltified.git"
 	},
 	"scripts": {
+		"test": "echo test",
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
 		"preview": "vite preview",
