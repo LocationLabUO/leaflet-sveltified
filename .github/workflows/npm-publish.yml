@@ -19,8 +19,6 @@ jobs:
           scope: 'locationlabuo'
       - run: npm ci
       - run: echo $NODE_AUTH_TOKEN
-          env:
-            NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
       - run: npm publish --access public
-          env:
-            NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
