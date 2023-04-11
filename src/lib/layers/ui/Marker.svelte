@@ -61,8 +61,8 @@
 	$: if (marker) marker.setOpacity(opacity);
 
 	onDestroy(async () => {
-		if (eventBridge) eventBridge.unregister();
 		if (marker) marker.removeFrom(await getMap());
+		if (eventBridge) eventBridge.unregister();
 	});
 </script>
 

@@ -59,15 +59,12 @@
 		console.log(tooltip.isOpen());
 	});
 	onDestroy(() => {
-		if (eventBridge) {
-			eventBridge.unregister();
-		}
-
 		if (parent) {
 			parent.off('tooltipopen', openTooltip);
 			parent.off('tooltipclose', closeTooltip);
 			parent.unbindTooltip();
 		}
+		if (eventBridge) eventBridge.unregister();
 	});
 
 	export async function getTooltip() {

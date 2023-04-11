@@ -1,4 +1,10 @@
-import type { LeafletEvent, LeafletMouseEvent, PopupEvent, TooltipEvent } from 'leaflet';
+import type {
+	LayerEvent,
+	LeafletEvent,
+	LeafletMouseEvent,
+	PopupEvent,
+	TooltipEvent
+} from 'leaflet';
 
 export interface LayerEvents {
 	add: LeafletEvent;
@@ -32,4 +38,10 @@ export interface DivOverlayEvents extends InteractiveLayerEvents {
 export interface ImageOverlayEvents extends InteractiveLayerEvents {
 	load: LeafletEvent;
 	error: LeafletEvent;
+}
+
+export interface LayerGroupEvents extends InteractiveLayerEvents {}
+export interface FeatureGroupEvents extends LayerGroupEvents {
+	layeradd: LayerEvent;
+	layerremove: LayerEvent;
 }

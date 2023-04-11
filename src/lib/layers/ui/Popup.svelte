@@ -61,19 +61,14 @@
 		parent.on('popupclose', closePopup);
 		parent.bindPopup(popup);
 		eventBridge = new EventBridge(popup, dispatch, events);
-
-		console.log(popup.isOpen());
 	});
 	onDestroy(() => {
-		if (eventBridge) {
-			eventBridge.unregister();
-		}
-
 		if (parent) {
 			parent.off('popupopen', openPopup);
 			parent.off('popupclose', closePopup);
 			parent.unbindPopup();
 		}
+		if (eventBridge) eventBridge.unregister();
 	});
 </script>
 

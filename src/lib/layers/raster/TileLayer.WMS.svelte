@@ -59,7 +59,6 @@
 	$: if (wmsLayer) wmsLayer.setParams(wmsParams);
 
 	onDestroy(async () => {
-		if (eventBridge) eventBridge.unregister();
 		if (wmsLayer) {
 			if (getLayerGroup) {
 				const lg = await getLayerGroup();
@@ -71,5 +70,6 @@
 				layersControl.removeLayer(wmsLayer);
 			}
 		}
+		if (eventBridge) eventBridge.unregister();
 	});
 </script>

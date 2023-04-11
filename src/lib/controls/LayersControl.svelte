@@ -19,7 +19,7 @@
 	setContext<ControlContext>(controlCtx, { getControl: getLayersControl });
 	setContext<LayersControlContext>(layersControlCtx, { getLayersControl });
 
-	let layersControl: L.Control.Layers;
+	let layersControl: Control.Layers;
 
 	onMount(async () => {
 		const L = await import('leaflet');

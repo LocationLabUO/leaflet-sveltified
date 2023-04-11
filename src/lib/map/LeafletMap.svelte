@@ -31,8 +31,8 @@
 	});
 
 	onDestroy(async () => {
-		if (eventBridge) eventBridge.unregister();
 		if (map) map.remove();
+		if (eventBridge) eventBridge.unregister();
 	});
 </script>
 

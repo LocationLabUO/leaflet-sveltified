@@ -1,14 +1,16 @@
+import type { FeatureGroup, Layer, LayerGroup } from 'leaflet';
+
 export const layerCtx = Symbol('Layer');
 export type LayerContext = {
-	getLayer?: () => Promise<L.Layer>;
+	getLayer?: () => Promise<Layer>;
 };
 
 export const layerGroupCtx = Symbol('LayerGroup');
 export type LayerGroupContext = {
-	getLayerGroup?: () => Promise<L.LayerGroup>;
+	getLayerGroup?: () => Promise<LayerGroup>;
 };
 
 export const featureGroupCtx = Symbol('FeatureGroup');
 export type FeatureGroupContext = {
-	getFeatureGroup?: () => Promise<L.FeatureGroup>;
+	getFeatureGroup?: () => Promise<FeatureGroup>;
 };

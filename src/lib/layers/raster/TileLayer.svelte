@@ -55,7 +55,6 @@
 	$: if (tileLayer) tileLayer.setZIndex(zIndex);
 
 	onDestroy(async () => {
-		if (eventBridge) eventBridge.unregister();
 		if (tileLayer) {
 			if (getLayerGroup) {
 				const lg = await getLayerGroup();
@@ -67,5 +66,6 @@
 				layersControl.removeLayer(tileLayer);
 			}
 		}
+		if (eventBridge) eventBridge.unregister();
 	});
 </script>
