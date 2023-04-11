@@ -18,6 +18,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: 'locationlabuo'
       - run: npm ci
+      - run: echo ${{secrets.NPM_ACCESS_TOKEN}}
       - run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_ACCESS_TOKEN}}
+          NPM_TOKEN: ${{secrets.NPM_ACCESS_TOKEN}}
