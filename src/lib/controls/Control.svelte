@@ -2,30 +2,28 @@
 	import { controlCtx, mapCtx, type ControlContext, type MapContext } from '$lib';
 	import type { Control, ControlOptions, ControlPosition } from 'leaflet';
 	import { getContext, onDestroy, onMount, setContext, tick } from 'svelte';
+	import { writable } from 'svelte/store';
 
 	export let position: ControlPosition = 'topright';
 	export let options: ControlOptions = {};
 
-	const { getMap } = getContext<MapContext>(mapCtx) || {};
-	if (!getMap) throw Error('Control Must be nested within a Map');
+	const map = getContext<MapContext>(mapCtx) || undefined;
+	if (!map) throw Error('Control Must be nested within a Map');
 
-	setContext<ControlContext>(controlCtx, { getControl });
-
-	let control: Control;
+	let control = writable<Control | undefined>();
+	setContext<ControlContext>(controlCtx, control);
 
 	onMount(async () => {
 		const L = await import('leaflet');
-		control = new L.Control(options).addTo(await getMap());
+		$control = new L.Control(options);
+		await tick();
+		if ($map) $control.addTo($map);
 	});
 
-	$: if (control) control.setPosition(position);
+	$: if ($control) $control.setPosition(position);
 
 	onDestroy(() => {
-		if (control) control.remove();
+		if ($map) $control?.remove();
+		$control = undefined;
 	});
-
-	export async function getControl() {
-		while (!control) await tick();
-		return control;
-	}
 </script>

@@ -12,53 +12,49 @@
 		type MarkerClusterGroupContext,
 		type MarkerClusterGroupEvents
 	} from '$lib';
-	import EventBridge from '$lib/util/EventBridge';
 	import type { MarkerClusterGroup, MarkerClusterGroupOptions } from 'leaflet';
 	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
 
 	import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+	import { writable } from 'svelte/store';
 
 	export let options: MarkerClusterGroupOptions = {};
 	export let events: (keyof MarkerClusterGroupEvents)[] = [];
 
-	const { getMap } = getContext<MapContext>(mapCtx) || {};
-	if (!getMap) throw Error('MarkerClusterGroup should be nested inside a LeafletMap');
-	const { getLayerGroup } = getContext<LayerGroupContext>(layerGroupCtx) || {};
+	const map = getContext<MapContext>(mapCtx);
+	const parent = getContext<LayerGroupContext>(layerGroupCtx);
 
-	let markerClusterGroup: MarkerClusterGroup;
+	let markerClusterGroup = writable<MarkerClusterGroup | undefined>();
 
-	export async function getMarkerClusterGroup() {
-		if (!markerClusterGroup) await tick();
-		return markerClusterGroup;
-	}
-	setContext<LayerContext>(layerCtx, {
-		getLayer: getMarkerClusterGroup
-	});
-	setContext<LayerGroupContext>(layerGroupCtx, {
-		getLayerGroup: getMarkerClusterGroup
-	});
-	setContext<FeatureGroupContext>(featureGroupCtx, {
-		getFeatureGroup: getMarkerClusterGroup
-	});
-	setContext<MarkerClusterGroupContext>(markerClusterGroupCtx, { getMarkerClusterGroup });
+	setContext<LayerContext>(layerCtx, markerClusterGroup);
+	setContext<LayerGroupContext>(layerGroupCtx, markerClusterGroup);
+	setContext<FeatureGroupContext>(featureGroupCtx, markerClusterGroup);
+	setContext<MarkerClusterGroupContext>(markerClusterGroupCtx, markerClusterGroup);
 
-	let eventBridge: EventBridge<MarkerClusterGroup>;
 	const dispatch = createEventDispatcher<MarkerClusterGroupEvents>();
 
 	onMount(async () => {
-		// await import('leaflet');
+		await import('leaflet');
 		await import('leaflet.markercluster');
 		const L = window['L']; //TODO: don't rely on global UMD
-		markerClusterGroup = L.markerClusterGroup(options);
+		$markerClusterGroup = L.markerClusterGroup(options);
 
-		markerClusterGroup.addTo(getLayerGroup ? await getLayerGroup() : await getMap());
-		eventBridge = new EventBridge(markerClusterGroup, dispatch, events);
+		await tick();
+		if ($parent) {
+			console.log($parent);
+			$markerClusterGroup.addTo($parent);
+		} else if ($map) $markerClusterGroup.addTo($map);
 	});
 
 	onDestroy(async () => {
-		if (markerClusterGroup) markerClusterGroup.removeFrom(await getMap());
-		if (eventBridge) eventBridge.unregister();
+		if ($parent && $markerClusterGroup) $parent.removeLayer($markerClusterGroup);
+		if ($map) $markerClusterGroup?.removeFrom($map);
+		$markerClusterGroup = undefined;
 	});
+
+	function updateListeners() {}
+
+	$: if (events) updateListeners();
 </script>
 
 <!-- <svelte:head>
@@ -67,8 +63,7 @@
 		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
 		crossorigin=""
 	></script></svelte:head -->
->
 
-{#if markerClusterGroup}
+{#if $markerClusterGroup}
 	<slot />
 {/if}

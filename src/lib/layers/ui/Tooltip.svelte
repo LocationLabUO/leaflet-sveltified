@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Layer, Tooltip, TooltipOptions } from 'leaflet';
+	import type { Tooltip, TooltipOptions } from 'leaflet';
 	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
 
 	import {
@@ -7,29 +7,28 @@
 		tooltipCtx,
 		type DivOverlayEvents,
 		type LayerContext,
-		type TooltipContext
+		type TooltipContext,
+		type TooltipEvents
 	} from '$lib';
-	import EventBridge from '$lib/util/EventBridge';
+	import { writable } from 'svelte/store';
 
-	const { getLayer } = getContext<LayerContext>(layerCtx) || {};
-	if (!getLayer) throw new Error('A tooltip must be nested within a Layer');
+	const parent = getContext<LayerContext>(layerCtx);
 
 	export let events: (keyof DivOverlayEvents)[] = [];
 	export let options: TooltipOptions = {};
 
-	let tooltip: Tooltip;
-	let parent: Layer;
+	let tooltip = writable<Tooltip | undefined>();
 
 	let open = false;
 	let content: HTMLElement;
 
-	setContext<LayerContext>(layerCtx, { getLayer: getTooltip });
-	setContext<TooltipContext>(tooltipCtx, { getTooltip });
+	setContext<LayerContext>(layerCtx, tooltip);
+	setContext<TooltipContext>(tooltipCtx, tooltip);
 
 	async function openTooltip() {
 		open = true;
 		await tick();
-		tooltip.setContent(content);
+		$tooltip?.setContent(content);
 	}
 	async function closeTooltip() {
 		if (tooltip) {
@@ -37,40 +36,53 @@
 		}
 	}
 
-	const dispatch = createEventDispatcher();
-	let eventBridge: EventBridge<Tooltip>;
-
 	onMount(async () => {
 		const L = await import('leaflet');
-		tooltip = L.tooltip(options);
-		parent = await getLayer();
-
-		if (parent.getTooltip()) {
-			parent.off('tooltipopen');
-			parent.off('tooltipclose');
-			parent.unbindTooltip();
-		}
-
-		parent.on('tooltipopen', openTooltip);
-		parent.on('tooltipclose', closeTooltip);
-		parent.bindTooltip(tooltip);
-		eventBridge = new EventBridge(tooltip, dispatch, events);
-
-		console.log(tooltip.isOpen());
-	});
-	onDestroy(() => {
-		if (parent) {
-			parent.off('tooltipopen', openTooltip);
-			parent.off('tooltipclose', closeTooltip);
-			parent.unbindTooltip();
-		}
-		if (eventBridge) eventBridge.unregister();
-	});
-
-	export async function getTooltip() {
+		$tooltip = L.tooltip(options);
 		await tick();
-		return tooltip;
+
+		if ($parent?.getTooltip()) {
+			$parent.off('tooltipopen');
+			$parent.off('tooltipclose');
+			$parent.unbindTooltip();
+		}
+		if ($parent) {
+			$parent.on('tooltipopen', openTooltip);
+			$parent.on('tooltipclose', closeTooltip);
+			$parent.bindTooltip($tooltip);
+		}
+	});
+
+	$: if (events) updateListeners();
+
+	let listeners = new Set<keyof TooltipEvents>();
+	const dispatch = createEventDispatcher();
+	function updateListeners() {
+		if (!$tooltip) return;
+		const newEvents = new Set(events);
+		for (const l of listeners) {
+			if (newEvents.has(l)) newEvents.delete(l);
+			else {
+				$tooltip.off(l);
+				listeners.delete(l);
+			}
+		}
+		for (const e of newEvents) {
+			if (!listeners.has(e)) {
+				$tooltip.on(e, (ev) => dispatch(e, ev));
+				listeners.add(e);
+			}
+		}
 	}
+
+	onDestroy(() => {
+		if ($parent) {
+			$parent.off('tooltipopen', openTooltip);
+			$parent.off('tooltipclose', closeTooltip);
+			$parent.unbindTooltip();
+		}
+		$tooltip = undefined;
+	});
 </script>
 
 {#if open}

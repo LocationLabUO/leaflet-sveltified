@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Layer, Popup, PopupOptions } from 'leaflet';
+	import type { Popup, PopupOptions } from 'leaflet';
 	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
 
 	import {
@@ -7,68 +7,79 @@
 		popupCtx,
 		type DivOverlayEvents,
 		type LayerContext,
-		type PopupContext
+		type PopupContext,
+		type PopupEvents
 	} from '$lib';
-	import EventBridge from '$lib/util/EventBridge';
+	import { writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 
-	const { getLayer } = getContext<LayerContext>(layerCtx) || {};
-	if (!getLayer) throw new Error('Popup must be nested inside a Layer');
+	const parent = getContext<LayerContext>(layerCtx);
 
 	export let events: (keyof DivOverlayEvents)[] = [];
 	export let options: PopupOptions = {};
 
-	let popup: Popup;
-	let parent: Layer;
+	let popup = writable<Popup | undefined>();
 
 	let open = false;
 	let content: HTMLElement;
 
-	export async function getPopup() {
-		await tick();
-		return popup;
-	}
-
-	setContext<LayerContext>(layerCtx, { getLayer: getPopup });
-	setContext<PopupContext>(popupCtx, { getPopup });
+	setContext<LayerContext>(layerCtx, popup);
+	setContext<PopupContext>(popupCtx, popup);
 
 	async function openPopup() {
 		open = true;
 		await tick();
-		popup.setContent(content);
+		$popup?.setContent(content);
 	}
 	async function closePopup() {
-		if (popup) {
+		if ($popup) {
 			open = false;
 		}
 	}
 
 	const dispatch = createEventDispatcher();
-	let eventBridge: EventBridge<Popup>;
 
 	onMount(async () => {
 		const L = await import('leaflet');
-		popup = L.popup(options);
-		parent = await getLayer();
+		$popup = L.popup(options);
 
-		if (parent.getPopup()) {
-			parent.off('popupopen');
-			parent.off('popupclose');
-			parent.unbindPopup();
+		await tick();
+
+		if ($parent?.getPopup()) {
+			$parent.off('popupopen');
+			$parent.off('popupclose');
+			$parent.unbindPopup();
 		}
 
-		parent.on('popupopen', openPopup);
-		parent.on('popupclose', closePopup);
-		parent.bindPopup(popup);
-		eventBridge = new EventBridge(popup, dispatch, events);
+		$parent?.on('popupopen', openPopup);
+		$parent?.on('popupclose', closePopup);
+		$parent?.bindPopup($popup);
 	});
-	onDestroy(() => {
-		if (parent) {
-			parent.off('popupopen', openPopup);
-			parent.off('popupclose', closePopup);
-			parent.unbindPopup();
+
+	$: if (events) updateListeners();
+
+	let listeners = new Set<keyof PopupEvents>();
+	function updateListeners() {
+		if (!$popup) return;
+		const newEvents = new Set(events);
+		for (const l of listeners) {
+			if (newEvents.has(l)) newEvents.delete(l);
+			else {
+				$popup.off(l);
+				listeners.delete(l);
+			}
 		}
-		if (eventBridge) eventBridge.unregister();
+		for (const e of newEvents) {
+			if (!listeners.has(e)) {
+				$popup.on(e, (ev) => dispatch(e, ev));
+				listeners.add(e);
+			}
+		}
+	}
+
+	onDestroy(() => {
+		if ($parent) $parent.unbindPopup();
+		$popup = undefined;
 	});
 </script>
 

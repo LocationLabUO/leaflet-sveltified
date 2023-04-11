@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onMount, tick } from 'svelte';
 	import { markerCtx, type MarkerContext } from './contexts';
 
-	const { getMarker } = getContext<MarkerContext>(markerCtx) || {};
+	const marker = getContext<MarkerContext>(markerCtx) || {};
+	if (!marker) throw Error('Icons must be nested under Markers');
 
 	export let options: L.IconOptions = {
 		iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -19,6 +20,7 @@
 	onMount(async () => {
 		const L = await import('leaflet');
 		// icon = options ? L.icon(options) : new L.Icon.Default;
-		(await getMarker()).setIcon(L.icon(options));
+		await tick();
+		$marker?.setIcon(L.icon(options));
 	});
 </script>

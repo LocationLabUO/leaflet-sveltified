@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Icon, LeafletMap, Marker, MarkerClusterGroup, TileLayer } from '$lib';
+	import { Icon, LeafletMap, Marker, MarkerClusterGroup, TileLayer, type MapEvents } from '$lib';
 	import Popup from '$lib/layers/ui/Popup.svelte';
 
 	let container: HTMLElement;
@@ -10,13 +10,39 @@
 		return [-90 + 180 * Math.random(), -180 + 360 * Math.random()];
 	}
 
+	let rendered = 0;
+	const p = 5000;
 	async function getPoints() {
 		const points: [number, number][] = [];
-		for (let i = 0; i < 1000; i = i + 1) {
+		for (let i = 0; i < p; i = i + 1) {
 			points.push(getRandomLatLng());
 		}
 		console.log(points);
 		return points;
+	}
+
+	function moveEnd(e: MapEvents['moveend']) {
+		console.log(e);
+	}
+
+	let events: (keyof MapEvents)[] = ['moveend'];
+
+	function toggleMap() {
+		showMap = !showMap;
+		if (showMap) rendered = 0;
+	}
+
+	function toggleZoom() {
+		if (events.includes('zoomend')) {
+			events = ['moveend'];
+		} else {
+			events = [...events, 'zoomend'];
+		}
+	}
+
+	function addRendered() {
+		console.log(rendered);
+		rendered = rendered + 1;
 	}
 </script>
 
@@ -29,6 +55,9 @@
 					zoom: 3
 				}}
 				{container}
+				{events}
+				on:moveend={(e) => moveEnd(e.detail)}
+				on:zoomend={(e) => moveEnd(e.detail)}
 			>
 				<TileLayer
 					url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`}
@@ -36,7 +65,7 @@
 						maxZoom: 18
 					}}
 				/>
-				<MarkerClusterGroup options={{}}>
+				<MarkerClusterGroup options={{ chunkedLoading: true, chunkInterval: 200 }}>
 					{#each points as p}
 						<Marker latLng={p}>
 							<Icon />
@@ -49,7 +78,11 @@
 			</LeafletMap>
 		{/if}
 	</div>
-	<button on:click={() => (showMap = !showMap)}> Clicky </button>
+	<button on:click={toggleMap}> Clicky </button>
+	<button on:click={toggleZoom}> Toggle </button>
+	{#if rendered < p}
+		Loading...
+	{/if}
 {/await}
 
 <style>

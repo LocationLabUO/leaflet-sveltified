@@ -1,20 +1,17 @@
+import type { Circle, CircleMarker, Polygon, Polyline, Rectangle } from 'leaflet';
+import type { Writable } from 'svelte/store';
+
 export const polylineCtx = Symbol('Polyline');
-export type PolylineContext = {
-	getPolyline: () => Promise<L.Polyline>;
-};
+export type PolylineContext = Writable<Polyline | undefined>;
+
 export const polygonCtx = Symbol('Polygon');
-export type PolygonContext = {
-	getPolygon: () => Promise<L.Polygon>;
-};
+export type PolygonContext = Writable<Polygon | undefined>;
+
 export const circleCtx = Symbol('Circle');
-export type CircleContext = {
-	getCircle: () => Promise<L.Circle>;
-};
+export type CircleContext = Writable<Circle | undefined>;
+
 export const circleMarkerCtx = Symbol('CircleMarker');
-export type CircleMarkerContext = {
-	getCircleMarker: () => Promise<L.CircleMarker>;
-};
+export type CircleMarkerContext = Writable<CircleMarker | undefined>;
+
 export const rectangleCtx = Symbol('Rectangle');
-export type RectangleContext = {
-	getRectangle: () => Promise<L.Rectangle>;
-};
+export type RectangleContext = Writable<Rectangle | undefined>;

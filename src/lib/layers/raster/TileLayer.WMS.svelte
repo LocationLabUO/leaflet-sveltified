@@ -7,9 +7,9 @@
 		type LayersControlContext,
 		type MapContext
 	} from '$lib';
-	import EventBridge from '$lib/util/EventBridge';
 	import type { TileLayer, WMSOptions, WMSParams } from 'leaflet';
-	import { createEventDispatcher, getContext, onDestroy, onMount } from 'svelte';
+	import { createEventDispatcher, getContext, onDestroy, onMount, tick } from 'svelte';
+	import { writable } from 'svelte/store';
 	import type { TileLayerEvents } from './events';
 
 	export let url: string;
@@ -24,52 +24,60 @@
 	export let name: string = 'WMS Layer';
 	export let selected: boolean = !isControlBaseLayer;
 
-	let wmsLayer: TileLayer.WMS;
+	let tileLayer = writable<TileLayer.WMS | undefined>();
 
-	const { getMap } = getContext<MapContext>(mapCtx) || {};
-	if (!getMap) throw Error('TileLayer must be nested under a LeafletMap');
-	const { getLayerGroup } = getContext<LayerGroupContext>(layerGroupCtx) || {};
-	const { getLayersControl } = getContext<LayersControlContext>(layersControlCtx) || {};
+	const map = getContext<MapContext>(mapCtx) || undefined;
+	if (!map) throw Error('TileLayer must be nested under a LeafletMap');
+	const layerGroup = getContext<LayerGroupContext>(layerGroupCtx);
+	const layersControl = getContext<LayersControlContext>(layersControlCtx);
 
 	const dispatch = createEventDispatcher();
-	let eventBridge: EventBridge<TileLayer>;
 
 	onMount(async () => {
 		const L = await import('leaflet');
-		wmsLayer = L.tileLayer.wms(url, { ...options, zIndex, opacity });
+		$tileLayer = L.tileLayer.wms(url, { ...options, zIndex, opacity });
 
-		eventBridge = new EventBridge(wmsLayer, dispatch, events);
+		await tick();
 
-		if (getLayerGroup) {
-			wmsLayer.addTo(await getLayerGroup());
-		} else if (getLayersControl) {
-			const lc = await getLayersControl();
+		if ($layerGroup) {
+			$tileLayer.addTo($layerGroup);
+		} else if ($layersControl) {
+			$layersControl.addBaseLayer($tileLayer, name);
 
-			lc.addBaseLayer(wmsLayer, name);
-
-			if (selected) wmsLayer.addTo(await getMap());
-		} else {
-			wmsLayer.addTo(await getMap());
+			if (selected && $map) $tileLayer.addTo($map);
+		} else if ($map) {
+			$tileLayer.addTo($map);
 		}
 	});
 
-	$: if (wmsLayer) wmsLayer.setUrl(url);
-	$: if (wmsLayer) wmsLayer.setOpacity(opacity);
-	$: if (wmsLayer) wmsLayer.setZIndex(zIndex);
-	$: if (wmsLayer) wmsLayer.setParams(wmsParams);
+	$: if ($tileLayer) $tileLayer.setUrl(url);
+	$: if ($tileLayer) $tileLayer.setOpacity(opacity);
+	$: if ($tileLayer) $tileLayer.setZIndex(zIndex);
+	$: if ($tileLayer) $tileLayer.setParams(wmsParams);
+	$: if (events) updateListeners();
 
-	onDestroy(async () => {
-		if (wmsLayer) {
-			if (getLayerGroup) {
-				const lg = await getLayerGroup();
-				lg.removeLayer(wmsLayer);
-			}
-			wmsLayer.removeFrom(await getMap());
-			if (getLayersControl) {
-				const layersControl = await getLayersControl();
-				layersControl.removeLayer(wmsLayer);
+	let listeners = new Set<keyof TileLayerEvents>();
+	function updateListeners() {
+		if (!$tileLayer) return;
+		const newEvents = new Set(events);
+		for (const l of listeners) {
+			if (newEvents.has(l)) newEvents.delete(l);
+			else {
+				$tileLayer.off(l);
+				listeners.delete(l);
 			}
 		}
-		if (eventBridge) eventBridge.unregister();
+		for (const e of newEvents) {
+			if (!listeners.has(e)) {
+				$tileLayer.on(e, (ev) => dispatch(e, ev));
+				listeners.add(e);
+			}
+		}
+	}
+	onDestroy(async () => {
+		if ($layersControl && $tileLayer) $layersControl.removeLayer($tileLayer);
+		if ($layerGroup && $tileLayer) $layerGroup.removeLayer($tileLayer);
+		if ($map) $tileLayer?.removeFrom($map);
+		$tileLayer = undefined;
 	});
 </script>

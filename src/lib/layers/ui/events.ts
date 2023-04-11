@@ -1,5 +1,5 @@
 import type { DragEndEvent, LeafletEvent } from 'leaflet';
-import type { InteractiveLayerEvents } from '../events';
+import type { DivOverlayEvents, InteractiveLayerEvents } from '../events';
 
 export interface MarkerEvents extends InteractiveLayerEvents {
 	//Dragging Events
@@ -11,3 +11,6 @@ export interface MarkerEvents extends InteractiveLayerEvents {
 
 	move: LeafletEvent;
 }
+
+export interface PopupEvents extends DivOverlayEvents {}
+export interface TooltipEvents extends DivOverlayEvents {}
