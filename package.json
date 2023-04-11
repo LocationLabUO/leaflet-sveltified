@@ -2,7 +2,20 @@
 	"name": "leaflet-sveltified",
 	"version": "0.0.1",
 	"license": "MIT",
-
+	"keywords": [
+		"svelte",
+		"sveltekit",
+		"leaflet",
+		"typescript",
+		"map",
+		"Location Innovation Lab",
+		"LIL"
+	],
+	"description": "Svelte Wrapper for Leaflet",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/locationlabuo/leaflet-sveltified.git"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
