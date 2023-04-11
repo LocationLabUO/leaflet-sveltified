@@ -56,17 +56,8 @@
 	});
 
 	onDestroy(async () => {
-		const s = performance.now();
-		const map = await getMap();
-		const t = performance.now();
-		console.log(`p: ${t - s}`);
-		if (!map) return;
-		console.log(map);
-
+		if (markerClusterGroup) markerClusterGroup.removeFrom(await getMap());
 		if (eventBridge) eventBridge.unregister();
-		if (map) markerClusterGroup.removeFrom(map);
-		// if (markerClusterGroup) markerClusterGroup.removeFrom(await getMap());
-		console.log('destroyed');
 	});
 </script>
 
