@@ -14,7 +14,6 @@
 		type MarkerEvents
 	} from '$lib';
 	import { writable } from 'svelte/store';
-	// import EventBridge from '../../util/EventBridge';
 
 	export let latLng: LatLngExpression;
 	export let zIndexOffset = 0;

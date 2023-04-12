@@ -1,17 +1,33 @@
-import type { Circle, CircleMarker, Polygon, Polyline, Rectangle } from 'leaflet';
-import type { Writable } from 'svelte/store';
+// import type { Circle, CircleMarker, Polygon, Polyline, Rectangle } from 'leaflet';
+// import type { Writable } from 'svelte/store';
 
-export const polylineCtx = Symbol('Polyline');
-export type PolylineContext = Writable<Polyline | undefined>;
+import type { Evented } from 'leaflet';
+import type { createEventDispatcher } from 'svelte';
+import type { MarkerEvents } from './layers';
+import type { MapEvents } from './map';
+import type { MarkerClusterGroupEvents } from './plugins';
 
-export const polygonCtx = Symbol('Polygon');
-export type PolygonContext = Writable<Polygon | undefined>;
+type AllEvents = MarkerEvents & MapEvents & MarkerClusterGroupEvents;
+type AnyEvent = Partial<AllEvents>;
 
-export const circleCtx = Symbol('Circle');
-export type CircleContext = Writable<Circle | undefined>;
-
-export const circleMarkerCtx = Symbol('CircleMarker');
-export type CircleMarkerContext = Writable<CircleMarker | undefined>;
-
-export const rectangleCtx = Symbol('Rectangle');
-export type RectangleContext = Writable<Rectangle | undefined>;
+export function update<T extends Evented>(
+	element: T,
+	events: (keyof AnyEvent)[],
+	listeners: Set<keyof AnyEvent>,
+	dispatch: ReturnType<typeof createEventDispatcher<AnyEvent>>
+) {
+	const newEvents = new Set(events);
+	for (const l of listeners) {
+		if (newEvents.has(l)) newEvents.delete(l);
+		else {
+			element.off(l);
+			listeners.delete(l);
+		}
+	}
+	for (const e of newEvents) {
+		if (!listeners.has(e)) {
+			element.on(e, (ev) => dispatch(e, ev));
+			listeners.add(e);
+		}
+	}
+}
