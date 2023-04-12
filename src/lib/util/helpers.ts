@@ -3,14 +3,14 @@
 
 import type { Evented } from 'leaflet';
 import type { createEventDispatcher } from 'svelte';
-import type { MarkerEvents } from './layers';
-import type { MapEvents } from './map';
-import type { MarkerClusterGroupEvents } from './plugins';
+import type { MarkerEvents } from '../layers';
+import type { MapEvents } from '../map';
+import type { MarkerClusterGroupEvents } from '../plugins';
 
 type AllEvents = MarkerEvents & MapEvents & MarkerClusterGroupEvents;
 type AnyEvent = Partial<AllEvents>;
 
-export function update<T extends Evented>(
+export function updateListeners<T extends Evented>(
 	element: T,
 	events: (keyof AnyEvent)[],
 	listeners: Set<keyof AnyEvent>,
