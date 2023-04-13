@@ -1,8 +1,11 @@
-import type { Marker, Popup, Tooltip } from 'leaflet';
+import type { DivOverlay, Marker, Popup, Tooltip } from 'leaflet';
 import type { Writable } from 'svelte/store';
 
 export const markerCtx = Symbol('Marker');
 export type MarkerContext = Writable<Marker | undefined>;
+
+export const divOverlayCtx = Symbol('DivOverlay');
+export type DivOverlayContext = Writable<DivOverlay | undefined>;
 
 export const tooltipCtx = Symbol('Tooltip');
 export type TooltipContext = Writable<Tooltip | undefined>;

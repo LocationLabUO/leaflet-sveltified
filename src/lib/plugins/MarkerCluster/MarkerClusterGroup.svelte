@@ -3,28 +3,27 @@
 		featureGroupCtx,
 		layerCtx,
 		layerGroupCtx,
-		mapCtx,
 		markerClusterGroupCtx,
 		type FeatureGroupContext,
 		type LayerContext,
 		type LayerGroupContext,
-		type MapContext,
 		type MarkerClusterGroupContext,
 		type MarkerClusterGroupEvents
 	} from '$lib';
 	import type { MarkerClusterGroup, MarkerClusterGroupOptions } from 'leaflet';
-	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount, setContext, tick } from 'svelte';
 
+	import { getParentStore, updateListeners } from '$lib/util/helpers';
 	import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 	import { writable } from 'svelte/store';
 
 	export let options: MarkerClusterGroupOptions = {};
 	export let events: (keyof MarkerClusterGroupEvents)[] = [];
 
-	const map = getContext<MapContext>(mapCtx);
-	const parent = getContext<LayerGroupContext>(layerGroupCtx);
+	const listeners = new Set<keyof MarkerClusterGroupEvents>();
 
-	let markerClusterGroup = writable<MarkerClusterGroup | undefined>();
+	const markerClusterGroup = writable<MarkerClusterGroup | undefined>();
+	const parent = getParentStore();
 
 	setContext<LayerContext>(layerCtx, markerClusterGroup);
 	setContext<LayerGroupContext>(layerGroupCtx, markerClusterGroup);
@@ -39,30 +38,18 @@
 		const L = window['L']; //TODO: don't rely on global UMD
 		$markerClusterGroup = L.markerClusterGroup(options);
 
-		await tick();
-		if ($parent) {
-			console.log($parent);
-			$markerClusterGroup.addTo($parent);
-		} else if ($map) $markerClusterGroup.addTo($map);
+		if (!$parent) await tick();
+		if ($parent) $markerClusterGroup.addTo($parent);
 	});
 
 	onDestroy(async () => {
-		if ($parent && $markerClusterGroup) $parent.removeLayer($markerClusterGroup);
-		if ($map) $markerClusterGroup?.removeFrom($map);
+		if ($parent) $markerClusterGroup?.remove();
 		$markerClusterGroup = undefined;
 	});
 
-	function updateListeners() {}
-
-	$: if (events) updateListeners();
+	$: if (events && $markerClusterGroup)
+		updateListeners($markerClusterGroup, events, listeners, dispatch);
 </script>
-
-<!-- <svelte:head>
-	<script
-		src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-		crossorigin=""
-	></script></svelte:head -->
 
 {#if $markerClusterGroup}
 	<slot />

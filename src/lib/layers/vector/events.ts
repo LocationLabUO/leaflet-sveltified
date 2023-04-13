@@ -1,9 +1,9 @@
-import type { DivOverlayEvents } from '../events';
+import type { DivOverlayEvents, InteractiveLayerEvents } from '../events';
 
-export interface CircleEvents extends DivOverlayEvents {}
-export interface CircleMarkerEvents extends DivOverlayEvents {}
-export interface GeoJSONEvents extends DivOverlayEvents {}
-export interface PolygonEvents extends DivOverlayEvents {}
-export interface PolylineEvents extends DivOverlayEvents {}
-export interface RectangleEvents extends DivOverlayEvents {}
+export interface CircleEvents extends InteractiveLayerEvents {}
+export interface CircleMarkerEvents extends InteractiveLayerEvents {}
+export interface GeoJSONEvents extends InteractiveLayerEvents {}
+export interface PolygonEvents extends InteractiveLayerEvents {}
+export interface PolylineEvents extends InteractiveLayerEvents {}
+export interface RectangleEvents extends InteractiveLayerEvents {}
 export interface SVGOverlayEvents extends DivOverlayEvents {}

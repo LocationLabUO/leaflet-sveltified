@@ -12,7 +12,7 @@
 
 	setContext<ControlContext>(controlCtx, { getControl: getScaleControl });
 
-	let scaleControl: L.Control.Scale;
+	let scaleControl: Control.Scale;
 
 	onMount(async () => {
 		const L = await import('leaflet');

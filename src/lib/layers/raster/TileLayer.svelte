@@ -16,9 +16,9 @@
 	export let opacity = 1.0;
 	export let zIndex = 1;
 	export let options: TileLayerOptions = {};
-	export let isControlBaseLayer: boolean = true;
-	export let name: string = 'Tile Layer';
-	export let selected: boolean = !isControlBaseLayer;
+	export let isControlBaseLayer = true;
+	export let name = 'Tile Layer';
+	export let selected = !isControlBaseLayer;
 	export let events: (keyof TileLayerEvents)[] = [];
 
 	let tileLayer = writable<TileLayer | undefined>();

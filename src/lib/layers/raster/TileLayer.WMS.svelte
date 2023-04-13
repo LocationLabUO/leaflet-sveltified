@@ -20,9 +20,9 @@
 		layers: ''
 	};
 	export let events: (keyof TileLayerEvents)[] = [];
-	export let isControlBaseLayer: boolean = true;
-	export let name: string = 'WMS Layer';
-	export let selected: boolean = !isControlBaseLayer;
+	export let isControlBaseLayer = true;
+	export let name = 'WMS Layer';
+	export let selected = !isControlBaseLayer;
 
 	let tileLayer = writable<TileLayer.WMS | undefined>();
 

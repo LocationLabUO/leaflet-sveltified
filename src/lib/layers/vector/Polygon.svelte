@@ -1,28 +1,23 @@
 <script lang="ts">
 	import {
 		layerCtx,
-		layerGroupCtx,
-		mapCtx,
 		polygonCtx,
 		type LayerContext,
-		type LayerGroupContext,
-		type MapContext,
 		type PolygonContext,
 		type PolygonEvents
 	} from '$lib';
-	import type { Polygon, PolylineOptions } from 'leaflet';
-	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
+	import { getParentStore, updateListeners } from '$lib/util/helpers';
+	import type { LatLngExpression, Polygon, PolylineOptions } from 'leaflet';
+	import { createEventDispatcher, onDestroy, onMount, setContext, tick } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	export let latLngs: L.LatLngExpression[] | L.LatLngExpression[][];
+	export let latLngs: LatLngExpression[] | LatLngExpression[][];
 	export let options: PolylineOptions = {};
 	export let events: (keyof PolygonEvents)[] = [];
 
-	const map = getContext<MapContext>(mapCtx) || undefined;
-	if (!map) throw Error('Marker must be nested within a LeafletMap or a LayerGroup');
-	const layerGroup = getContext<LayerGroupContext>(layerGroupCtx);
-
-	let polygon = writable<Polygon | undefined>();
+	const listeners = new Set<keyof PolygonEvents>();
+	const polygon = writable<Polygon | undefined>();
+	const parent = getParentStore();
 
 	setContext<LayerContext>(layerCtx, polygon);
 	setContext<PolygonContext>(polygonCtx, polygon);
@@ -34,36 +29,16 @@
 		const L = await import('leaflet');
 		$polygon = L.polygon(latLngs, options);
 
-		await tick();
-		if ($map) $polygon.addTo($layerGroup ? $layerGroup : $map);
+		if (!$parent) await tick();
+		if ($parent) $polygon.addTo($parent);
 	});
 
 	$: if (latLngs) $polygon?.setLatLngs(latLngs);
 	$: if (options) $polygon?.setStyle(options);
-	$: if (events) updateListeners();
-
-	let listeners = new Set<keyof PolygonEvents>();
-	function updateListeners() {
-		if (!$polygon) return;
-		const newEvents = new Set(events);
-		for (const l of listeners) {
-			if (newEvents.has(l)) newEvents.delete(l);
-			else {
-				$polygon.off(l);
-				listeners.delete(l);
-			}
-		}
-		for (const e of newEvents) {
-			if (!listeners.has(e)) {
-				$polygon.on(e, (ev) => dispatch(e, ev));
-				listeners.add(e);
-			}
-		}
-	}
+	$: if (events && $polygon) updateListeners($polygon, events, listeners, dispatch);
 
 	onDestroy(async () => {
-		if ($polygon && $layerGroup) $layerGroup.removeLayer($polygon);
-		if ($map) $polygon?.removeFrom($map);
+		if ($parent) $polygon?.remove();
 		$polygon = undefined;
 	});
 </script>

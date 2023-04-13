@@ -6,7 +6,13 @@ module.exports = {
 	ignorePatterns: ['*.cjs'],
 	overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
 	settings: {
-		'svelte3/typescript': () => require('typescript')
+		'svelte3/typescript': () => require('typescript'),
+		'@typescript-eslint/no-empty-interface': [
+			'warn',
+			{
+				allowSingleExtends: true
+			}
+		]
 	},
 	parserOptions: {
 		sourceType: 'module',

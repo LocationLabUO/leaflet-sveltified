@@ -16,7 +16,7 @@
 	onMount(async () => {
 		const L = await import('leaflet');
 		$control = new L.Control(options);
-		await tick();
+		if (!$map) await tick();
 		if ($map) $control.addTo($map);
 	});
 

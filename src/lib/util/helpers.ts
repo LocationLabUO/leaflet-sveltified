@@ -2,12 +2,27 @@
 // import type { Writable } from 'svelte/store';
 
 import type { Evented } from 'leaflet';
-import type { createEventDispatcher } from 'svelte';
-import type { MarkerEvents } from '../layers';
-import type { MapEvents } from '../map';
+import { getContext, type createEventDispatcher } from 'svelte';
+import {
+	layerGroupCtx,
+	type DivOverlayEvents,
+	type LayerGroupContext,
+	type MarkerEvents
+} from '../layers';
+import { mapCtx, type MapContext, type MapEvents } from '../map';
 import type { MarkerClusterGroupEvents } from '../plugins';
 
-type AllEvents = MarkerEvents & MapEvents & MarkerClusterGroupEvents;
+export function getParentStore() {
+	const map = getContext<MapContext>(mapCtx);
+	if (!map) throw Error('Layers must be nested under LeafletMap or a LayerGroup');
+	const layerGroup = getContext<LayerGroupContext>(layerGroupCtx) || undefined;
+
+	const parent = layerGroup ? layerGroup : map;
+
+	return parent;
+}
+
+type AllEvents = MarkerEvents & DivOverlayEvents & MapEvents & MarkerClusterGroupEvents;
 type AnyEvent = Partial<AllEvents>;
 
 export function updateListeners<T extends Evented>(

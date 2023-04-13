@@ -10,14 +10,15 @@
 		type TooltipContext,
 		type TooltipEvents
 	} from '$lib';
+	import { updateListeners } from '$lib/util/helpers';
 	import { writable } from 'svelte/store';
 
-	const parent = getContext<LayerContext>(layerCtx);
-
-	export let events: (keyof DivOverlayEvents)[] = [];
 	export let options: TooltipOptions = {};
+	export let events: (keyof DivOverlayEvents)[] = [];
+	const listeners = new Set<keyof TooltipEvents>();
 
-	let tooltip = writable<Tooltip | undefined>();
+	const parent = getContext<LayerContext>(layerCtx) || undefined;
+	const tooltip = writable<Tooltip | undefined>();
 
 	let open = false;
 	let content: HTMLElement;
@@ -31,14 +32,17 @@
 		$tooltip?.setContent(content);
 	}
 	async function closeTooltip() {
-		if (tooltip) {
+		if ($tooltip) {
 			open = false;
 		}
 	}
 
+	const dispatch = createEventDispatcher();
+
 	onMount(async () => {
 		const L = await import('leaflet');
 		$tooltip = L.tooltip(options);
+
 		await tick();
 
 		if ($parent?.getTooltip()) {
@@ -46,41 +50,16 @@
 			$parent.off('tooltipclose');
 			$parent.unbindTooltip();
 		}
-		if ($parent) {
-			$parent.on('tooltipopen', openTooltip);
-			$parent.on('tooltipclose', closeTooltip);
-			$parent.bindTooltip($tooltip);
-		}
+
+		$parent?.on('tooltipopen', openTooltip);
+		$parent?.on('tooltipclose', closeTooltip);
+		$parent?.bindTooltip($tooltip);
 	});
 
-	$: if (events) updateListeners();
-
-	let listeners = new Set<keyof TooltipEvents>();
-	const dispatch = createEventDispatcher();
-	function updateListeners() {
-		if (!$tooltip) return;
-		const newEvents = new Set(events);
-		for (const l of listeners) {
-			if (newEvents.has(l)) newEvents.delete(l);
-			else {
-				$tooltip.off(l);
-				listeners.delete(l);
-			}
-		}
-		for (const e of newEvents) {
-			if (!listeners.has(e)) {
-				$tooltip.on(e, (ev) => dispatch(e, ev));
-				listeners.add(e);
-			}
-		}
-	}
+	$: if (events && $tooltip) updateListeners($tooltip, events, listeners, dispatch);
 
 	onDestroy(() => {
-		if ($parent) {
-			$parent.off('tooltipopen', openTooltip);
-			$parent.off('tooltipclose', closeTooltip);
-			$parent.unbindTooltip();
-		}
+		if ($parent) $parent.unbindTooltip();
 		$tooltip = undefined;
 	});
 </script>

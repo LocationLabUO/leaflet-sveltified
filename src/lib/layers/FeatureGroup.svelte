@@ -3,30 +3,26 @@
 		featureGroupCtx,
 		layerCtx,
 		layerGroupCtx,
-		mapCtx,
 		type FeatureGroupContext,
 		type FeatureGroupEvents,
 		type LayerContext,
-		type LayerGroupContext,
-		type MapContext
+		type LayerGroupContext
 	} from '$lib';
-	import type { FeatureGroup, LayerOptions } from 'leaflet';
-	import { createEventDispatcher, getContext, onDestroy, onMount, setContext, tick } from 'svelte';
+	import type { FeatureGroup, LayerOptions, PathOptions } from 'leaflet';
+	import { createEventDispatcher, onDestroy, onMount, setContext, tick } from 'svelte';
 
-	import { updateListeners } from '$lib/util/helpers';
-	import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+	import { getParentStore, updateListeners } from '$lib/util/helpers';
 	import { writable } from 'svelte/store';
 
 	export let options: LayerOptions = {};
 	export let events: (keyof FeatureGroupEvents)[] = [];
+	export let zIndex = 1;
+	export let style: PathOptions = {};
 
-	const map = getContext<MapContext>(mapCtx) || undefined;
-	if (!map) throw Error('FeatureGroup must be nested under a LeafletMap or LayerGroup');
-	const layergroup = getContext<LayerGroupContext | undefined>(layerGroupCtx);
+	const listeners = new Set<keyof FeatureGroupEvents>();
 
-	const parent = layergroup ?? map;
-
-	let featureGroup = writable<FeatureGroup | undefined>();
+	const featureGroup = writable<FeatureGroup | undefined>();
+	const parent = getParentStore();
 
 	setContext<LayerContext>(layerCtx, featureGroup);
 	setContext<LayerGroupContext>(layerGroupCtx, featureGroup);
@@ -35,26 +31,21 @@
 	const dispatch = createEventDispatcher<FeatureGroupEvents>();
 
 	onMount(async () => {
-		await import('leaflet');
-		await import('leaflet.markercluster');
-		const L = window['L']; //TODO: don't rely on global UMD
+		const L = await import('leaflet');
 		$featureGroup = L.featureGroup([], options);
 
 		if (!$parent) await tick();
-		if ($parent) {
-			$featureGroup.addTo($parent);
-		}
+		if ($parent) $featureGroup.addTo($parent);
 	});
 
 	onDestroy(async () => {
-		console.log($parent);
-		if ($parent && $featureGroup) $featureGroup.remove();
+		if ($parent) $featureGroup?.remove();
 		$featureGroup = undefined;
 	});
 
-	const listeners = new Set<keyof FeatureGroupEvents>();
-
 	$: if (events && $featureGroup) updateListeners($featureGroup, events, listeners, dispatch);
+	$: $featureGroup?.setZIndex(zIndex);
+	$: $featureGroup?.setStyle(style);
 </script>
 
 {#if $featureGroup}

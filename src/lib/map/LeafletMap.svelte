@@ -1,18 +1,9 @@
 <script lang="ts">
-	import {
-		featureGroupCtx,
-		layerCtx,
-		layerGroupCtx,
-		mapCtx,
-		type FeatureGroupContext,
-		type LayerContext,
-		type LayerGroupContext,
-		type MapContext,
-		type MapEvents
-	} from '$lib';
+	import { mapCtx, type MapContext, type MapEvents } from '$lib';
 	import type { Map, MapOptions } from 'leaflet';
 	import { createEventDispatcher, onDestroy, onMount, setContext, tick } from 'svelte';
 
+	import { updateListeners } from '$lib/util/helpers';
 	import 'leaflet/dist/leaflet.css';
 	import { writable } from 'svelte/store';
 
@@ -32,16 +23,12 @@
 	};
 
 	setContext<MapContext>(mapCtx, map);
-	setContext<LayerContext>(layerCtx, writable());
-	setContext<LayerGroupContext>(layerGroupCtx, writable());
-	setContext<FeatureGroupContext>(featureGroupCtx, writable());
 
 	const dispatch = createEventDispatcher<MapEvents>();
 
 	onMount(async () => {
 		const L = await import('leaflet');
 		$map = L.map(container, options);
-		console.log($map);
 	});
 
 	onDestroy(() => {
@@ -55,25 +42,7 @@
 		$map = undefined;
 	});
 
-	function updateListeners() {
-		if (!$map) return;
-		const newEvents = new Set(events);
-		for (const l of listeners) {
-			if (newEvents.has(l)) newEvents.delete(l);
-			else {
-				$map.off(l);
-				listeners.delete(l);
-			}
-		}
-		for (const e of newEvents) {
-			if (!listeners.has(e)) {
-				$map.on(e, (ev) => dispatch(e, ev));
-				listeners.add(e);
-			}
-		}
-	}
-
-	$: if (events) updateListeners();
+	$: if (events && $map) updateListeners($map, events, listeners, dispatch);
 </script>
 
 {#if $map}

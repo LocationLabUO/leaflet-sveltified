@@ -10,15 +10,16 @@
 		type PopupContext,
 		type PopupEvents
 	} from '$lib';
+	import { updateListeners } from '$lib/util/helpers';
 	import { writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 
-	const parent = getContext<LayerContext>(layerCtx);
-
-	export let events: (keyof DivOverlayEvents)[] = [];
 	export let options: PopupOptions = {};
+	export let events: (keyof DivOverlayEvents)[] = [];
+	const listeners = new Set<keyof PopupEvents>();
 
-	let popup = writable<Popup | undefined>();
+	const parent = getContext<LayerContext>(layerCtx) || undefined;
+	const popup = writable<Popup | undefined>();
 
 	let open = false;
 	let content: HTMLElement;
@@ -56,26 +57,7 @@
 		$parent?.bindPopup($popup);
 	});
 
-	$: if (events) updateListeners();
-
-	let listeners = new Set<keyof PopupEvents>();
-	function updateListeners() {
-		if (!$popup) return;
-		const newEvents = new Set(events);
-		for (const l of listeners) {
-			if (newEvents.has(l)) newEvents.delete(l);
-			else {
-				$popup.off(l);
-				listeners.delete(l);
-			}
-		}
-		for (const e of newEvents) {
-			if (!listeners.has(e)) {
-				$popup.on(e, (ev) => dispatch(e, ev));
-				listeners.add(e);
-			}
-		}
-	}
+	$: if (events && $popup) updateListeners($popup, events, listeners, dispatch);
 
 	onDestroy(() => {
 		if ($parent) $parent.unbindPopup();
