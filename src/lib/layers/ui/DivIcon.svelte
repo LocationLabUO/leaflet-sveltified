@@ -11,12 +11,10 @@
 	let content: HTMLElement;
 
 	onMount(async () => {
-		const L = await import('leaflet');
-
 		const className = options.className ? options.className : 'empty-no-styles';
 
 		await tick();
-		icon = L.divIcon({ html: content, ...options, className });
+		icon = window.L.divIcon({ html: content, ...options, className });
 		if ($marker) $marker.setIcon(icon);
 	});
 

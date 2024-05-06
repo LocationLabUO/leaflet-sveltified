@@ -19,9 +19,8 @@
 
 	// let icon: L.Icon;
 	onMount(async () => {
-		const L = await import('leaflet');
 		// icon = options ? L.icon(options) : new L.Icon.Default;
 		await tick();
-		$marker?.setIcon(L.icon(options));
+		$marker?.setIcon(window.L.icon(options));
 	});
 </script>

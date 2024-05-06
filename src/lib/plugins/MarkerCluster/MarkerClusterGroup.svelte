@@ -33,7 +33,6 @@
 	const dispatch = createEventDispatcher<MarkerClusterGroupEvents>();
 
 	onMount(async () => {
-		await import('leaflet');
 		await import('leaflet.markercluster');
 		const L = window['L']; //TODO: don't rely on global UMD
 		$markerClusterGroup = L.markerClusterGroup(options);

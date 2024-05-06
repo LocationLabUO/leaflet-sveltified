@@ -30,8 +30,7 @@
 	const dispatch = createEventDispatcher();
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$tileLayer = L.tileLayer(url, { ...options, opacity, zIndex });
+		$tileLayer = window.L.tileLayer(url, { ...options, opacity, zIndex });
 		await tick();
 
 		if ($layerGroup) {

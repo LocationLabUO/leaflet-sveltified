@@ -27,8 +27,7 @@
 
 	//let initial = true;
 	onMount(async () => {
-		const L = await import('leaflet');
-		$rectangle = L.rectangle(latLngBounds, options);
+		$rectangle = window.L.rectangle(latLngBounds, options);
 
 		if (!$parent) await tick();
 		if ($parent) $rectangle.addTo($parent);

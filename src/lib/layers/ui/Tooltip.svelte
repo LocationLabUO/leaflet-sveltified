@@ -40,8 +40,7 @@
 	const dispatch = createEventDispatcher();
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$tooltip = L.tooltip(options);
+		$tooltip = window.L.tooltip(options);
 
 		await tick();
 

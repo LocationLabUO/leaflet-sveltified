@@ -30,11 +30,9 @@
 
 	//let initial = true;
 	onMount(async () => {
-		const L = await import('leaflet');
-
-		$marker = L.marker(latLng, {
+		$marker = window.L.marker(latLng, {
 			...options,
-			icon: L.divIcon({ className: 'no-styles' }),
+			icon: window.L.divIcon({ className: 'no-styles' }),
 			zIndexOffset,
 			opacity
 		});

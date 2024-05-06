@@ -26,8 +26,7 @@
 
 	//let initial = true;
 	onMount(async () => {
-		const L = await import('leaflet');
-		$polygon = L.polygon(latLngs, options);
+		$polygon = window.L.polygon(latLngs, options);
 
 		if (!$parent) await tick();
 		if ($parent) $polygon.addTo($parent);

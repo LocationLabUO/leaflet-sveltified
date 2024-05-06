@@ -26,8 +26,7 @@
 
 	//let initial = true;
 	onMount(async () => {
-		const L = await import('leaflet');
-		$circle = L.circle(latLng, { ...options, radius });
+		$circle = window.L.circle(latLng, { ...options, radius });
 
 		if (!$parent) await tick();
 		if ($parent) $circle.addTo($parent);

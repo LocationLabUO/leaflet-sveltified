@@ -14,8 +14,7 @@
 	setContext<ControlContext>(controlCtx, control);
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$control = new L.Control(options);
+		$control = new window.L.Control(options);
 		if (!$map) await tick();
 		if ($map) $control.addTo($map);
 	});

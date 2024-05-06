@@ -34,8 +34,7 @@
 	const dispatch = createEventDispatcher();
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$tileLayer = L.tileLayer.wms(url, { ...options, zIndex, opacity });
+		$tileLayer = window.L.tileLayer.wms(url, { ...options, zIndex, opacity });
 
 		await tick();
 

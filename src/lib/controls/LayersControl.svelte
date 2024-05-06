@@ -23,8 +23,7 @@
 	setContext<LayersControlContext>(layersControlCtx, layersControl);
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$layersControl = L.control.layers(undefined, undefined, options).addTo($map);
+		$layersControl = window.L.control.layers(undefined, undefined, options).addTo($map);
 	});
 
 	onDestroy(() => {

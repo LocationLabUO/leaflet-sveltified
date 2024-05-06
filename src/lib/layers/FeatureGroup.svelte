@@ -31,8 +31,7 @@
 	const dispatch = createEventDispatcher<FeatureGroupEvents>();
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$featureGroup = L.featureGroup([], options);
+		$featureGroup = window.L.featureGroup([], options);
 
 		if (!$parent) await tick();
 		if ($parent) $featureGroup.addTo($parent);

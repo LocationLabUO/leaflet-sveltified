@@ -28,7 +28,7 @@
 
 	onMount(async () => {
 		const L = await import('leaflet');
-		$map = L.map(container, options);
+		$map = window.L.map(container, options);
 	});
 
 	onDestroy(() => {

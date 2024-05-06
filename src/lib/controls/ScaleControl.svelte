@@ -16,8 +16,7 @@
 	setContext<ControlContext>(controlCtx, scaleControl);
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$scaleControl = L.control.scale(options).addTo($map);
+		$scaleControl = window.L.control.scale(options).addTo($map);
 	});
 
 	$: if ($scaleControl) $scaleControl.setPosition(position);

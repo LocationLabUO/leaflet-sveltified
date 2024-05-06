@@ -26,8 +26,7 @@
 
 	//let initial = true;
 	onMount(async () => {
-		const L = await import('leaflet');
-		$polyline = L.polyline(latLngs, options);
+		$polyline = window.L.polyline(latLngs, options);
 
 		if (!$parent) await tick();
 		if ($parent) $polyline.addTo($parent);

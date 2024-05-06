@@ -41,8 +41,7 @@
 	const dispatch = createEventDispatcher();
 
 	onMount(async () => {
-		const L = await import('leaflet');
-		$popup = L.popup(options);
+		$popup = window.L.popup(options);
 
 		await tick();
 
