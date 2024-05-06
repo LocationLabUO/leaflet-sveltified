@@ -43,7 +43,7 @@
 	});
 
 	$: if (events && $map) updateListeners($map, events, listeners, dispatch);
-	$: if($map) $map.options = options; 
+	$: if($map && options.center) $map.setView(options.center, options.zoom); 
 </script>
 
 {#if $map}
