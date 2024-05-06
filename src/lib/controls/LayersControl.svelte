@@ -9,35 +9,38 @@
 	} from '$lib';
 	import type { Control, ControlPosition } from 'leaflet';
 	import { getContext, onDestroy, onMount, setContext, tick } from 'svelte';
+	import { writable } from 'svelte/store';
 
 	export let position: ControlPosition = 'topright';
 	export let options: Control.LayersOptions = {};
 
-	const { getMap } = getContext<MapContext>(mapCtx) || {};
-	if (!getMap) throw Error('LayersControl must be nested within a LeafletMap');
+	const layersControl = writable<Control.Layers | undefined>();
 
-	setContext<ControlContext>(controlCtx, { getControl: getLayersControl });
-	setContext<LayersControlContext>(layersControlCtx, { getLayersControl });
+	const map = getContext<MapContext>(mapCtx) || {};
+	if (!$map) throw Error('LayersControl must be nested within a LeafletMap');
 
-	let layersControl: Control.Layers;
+	setContext<ControlContext>(controlCtx, layersControl);
+	setContext<LayersControlContext>(layersControlCtx, layersControl);
 
 	onMount(async () => {
 		const L = await import('leaflet');
-		layersControl = L.control.layers(undefined, undefined, options).addTo(await getMap());
+		$layersControl = L.control.layers(undefined, undefined, options).addTo($map);
 	});
 
 	onDestroy(() => {
-		layersControl.remove();
+		if ($layersControl) {
+			$layersControl.remove();
+		}
 	});
 
-	$: if (layersControl) layersControl.setPosition(position);
+	$: if ($layersControl) $layersControl.setPosition(position);
 
 	export async function getLayersControl() {
 		await tick();
-		return layersControl;
+		return $layersControl;
 	}
 </script>
 
-{#if layersControl}
+{#if $layersControl}
 	<slot />
 {/if}
