@@ -19,7 +19,7 @@
 
 	export const getMap = async () => {
 		await tick();
-		return map;
+		return $map;
 	};
 
 	setContext<MapContext>(mapCtx, map);
