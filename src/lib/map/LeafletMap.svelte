@@ -43,6 +43,7 @@
 	});
 
 	$: if (events && $map) updateListeners($map, events, listeners, dispatch);
+	$: if($map) $map.options = options; 
 </script>
 
 {#if $map}
