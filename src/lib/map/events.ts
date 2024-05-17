@@ -52,5 +52,6 @@ export interface MapEvents {
 	preclick: LeafletMouseEvent;
 	//Other Events
 	zoomanim: ZoomAnimEvent;
+	drag: LeafletEvent;
 }
 //#endregion
