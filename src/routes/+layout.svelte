@@ -1,6 +1,17 @@
-<slot />
+<script lang="ts">
+	let { children } = $props();
+</script>
+
+<div class="container">
+	{@render children()}
+</div>
 
 <style>
+	.container {
+		height: 100dvh;
+		width: 100dvw;
+	}
+
 	:global(
 			html,
 			body,
