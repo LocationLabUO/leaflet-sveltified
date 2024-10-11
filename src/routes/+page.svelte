@@ -1,51 +1,66 @@
 <script lang="ts">
-	import { Icon, LeafletMap, Marker, Popup, TileLayer } from '$lib';
+	import LayerGroup from '$lib/layers/LayerGroup/LayerGroup.svelte';
+	import TileLayer from '$lib/layers/raster/TileLayer.svelte';
+	import LeafletMap from '$lib/map/LeafletMap.svelte';
+	import type { LeafletMouseEventHandlerFn, MapOptions } from 'leaflet';
 
-	let container: HTMLElement;
+	let show = $state(true);
+	let click = $state(true);
+	let ze = $state(true);
+	$inspect(show);
 
-	let n = 0;
-	const points: [number, number][] = [];
-	function getRandomLatLng(): [number, number] {
-		return [-90 + 180 * Math.random(), -180 + 360 * Math.random()];
-	}
-	for (let i = 0; i < n; i = i + 1) {
-		points.push(getRandomLatLng());
-	}
+	const handleClick: LeafletMouseEventHandlerFn = (event) => {
+		console.log(event.latlng);
+	};
+
+	let options: MapOptions = $state({ center: [0, 0], zoom: 3, maxZoom: 10 });
 </script>
 
-<div class="container" bind:this={container}>
-	{#if container}
-		<LeafletMap
+{#if show}
+	<LeafletMap
+		{options}
+		events={{
+			click: click ? handleClick : undefined,
+			contextmenu: () => {
+				console.log('c');
+			}
+		}}
+	>
+		<TileLayer
+			url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`}
 			options={{
-				center: [0, 0],
-				zoom: 3
+				maxZoom: 18
 			}}
-			{container}
-		>
-			<TileLayer
-				url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`}
-				options={{
-					maxZoom: 18
-				}}
-			/>
-			<Marker latLng={[0, 0]}>
-				<Icon />
-				<Popup>
-					<div>This is a svelte component</div>
-					<button
-						on:click={() => {
-							n = n + 1;
-						}}>Increment: {n}</button
-					>
-				</Popup>
-			</Marker>
-		</LeafletMap>
-	{/if}
+		/>
+		<LayerGroup options={{}}></LayerGroup>
+	</LeafletMap>
+{/if}
+
+<div class="overlay">
+	<label for="show">Show Map:</label>
+	<input type="checkbox" bind:checked={show} />
+
+	<input type="number" bind:value={options.zoom} />
+
+	<div>
+		<label for="show">Bind Click:</label>
+		<input type="checkbox" bind:checked={click} />
+
+		<label for="show">Bind Zoom End:</label>
+		<input type="checkbox" bind:checked={ze} />
+	</div>
 </div>
 
 <style>
-	.container {
-		height: 100vh;
-		width: 100%;
+	.overlay {
+		padding: 10px;
+		background: white;
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 10000;
+		box-shadow:
+			0 4px 6px -1px rgb(0 0 0 / 0.1),
+			0 2px 4px -2px rgb(0 0 0 / 0.1);
 	}
 </style>

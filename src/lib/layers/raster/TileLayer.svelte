@@ -1,76 +1,58 @@
-<script lang="ts">
-	import {
-		layerGroupCtx,
-		layersControlCtx,
-		mapCtx,
-		type LayerGroupContext,
-		type LayersControlContext,
-		type MapContext,
-		type TileLayerEvents
-	} from '$lib';
-	import type { TileLayer, TileLayerOptions } from 'leaflet';
-	import { createEventDispatcher, getContext, onDestroy, onMount, tick } from 'svelte';
-	import { writable } from 'svelte/store';
+<script>
+	import { getParent } from '$lib/util/parent.js';
+	import { setLayerContext } from '../Layer.svelte.js';
 
-	export let url: string;
-	export let opacity = 1.0;
-	export let zIndex = 1;
-	export let options: TileLayerOptions = {};
-	export let isControlBaseLayer = true;
-	export let name = 'Tile Layer';
-	export let selected = !isControlBaseLayer;
-	export let events: (keyof TileLayerEvents)[] = [];
+	/**
+	 * @type {import('./TileLayer.d.ts').TileLayerProps}
+	 */
+	let { url, options, events, children } = $props();
 
-	let tileLayer = writable<TileLayer | undefined>();
+	const parent = getParent();
+	const context = setLayerContext();
 
-	const map = getContext<MapContext>(mapCtx);
-	const layerGroup = getContext<LayerGroupContext>(layerGroupCtx) || undefined;
-	const layersControl = getContext<LayersControlContext>(layersControlCtx) || undefined;
+	//onMount
+	$effect(async () => {
+		const L = await import('leaflet');
+		context.layer = new L.tileLayer(url, { ...options });
+		context.layer.addTo(parent);
+	});
 
-	const dispatch = createEventDispatcher();
+	//onDestroy
+	$effect(() => {
+		return () => {
+			context.layer?.removeFrom(parent);
+		};
+	});
 
-	onMount(async () => {
-		$tileLayer = window.L.tileLayer(url, { ...options, opacity, zIndex });
-		await tick();
-
-		if ($layerGroup) {
-			$tileLayer.addTo($layerGroup);
-		} else if ($layersControl) {
-			$layersControl.addBaseLayer($tileLayer, name);
-
-			if (selected && $map) $tileLayer.addTo($map);
-		} else if ($map) {
-			$tileLayer.addTo($map);
+	//Events Effect
+	$effect(() => {
+		if (context.layer) {
+			for (const key in events) {
+				if (context.layer && events[key]) {
+					context.layer.on(key, events[key]);
+				}
+			}
+			return () => {
+				for (const key in events) {
+					context.layer?.off(key);
+				}
+			};
 		}
 	});
 
-	$: if ($tileLayer) $tileLayer.setUrl(url);
-	$: if ($tileLayer) $tileLayer.setOpacity(opacity);
-	$: if ($tileLayer) $tileLayer.setZIndex(zIndex);
-	$: if (events) updateListeners();
+	$effect(() => {
+		context.layer?.setUrl(url);
+	});
 
-	let listeners = new Set<keyof TileLayerEvents>();
-	function updateListeners() {
-		if (!$tileLayer) return;
-		const newEvents = new Set(events);
-		for (const l of listeners) {
-			if (newEvents.has(l)) newEvents.delete(l);
-			else {
-				$tileLayer.off(l);
-				listeners.delete(l);
-			}
-		}
-		for (const e of newEvents) {
-			if (!listeners.has(e)) {
-				$tileLayer.on(e, (ev) => dispatch(e, ev));
-				listeners.add(e);
-			}
-		}
-	}
-	onDestroy(async () => {
-		if ($layersControl && $tileLayer) $layersControl.removeLayer($tileLayer);
-		if ($layerGroup && $tileLayer) $layerGroup.removeLayer($tileLayer);
-		if ($map) $tileLayer?.removeFrom($map);
-		$tileLayer = undefined;
+	$effect(() => {
+		context.layer?.setOpacity(options?.opacity);
+	});
+
+	$effect(() => {
+		context.layer?.setZIndex(options?.zIndex);
 	});
 </script>
+
+{#if context.layer}
+	{@render children?.()}
+{/if}

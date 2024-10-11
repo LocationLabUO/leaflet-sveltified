@@ -1,51 +1,59 @@
-<script lang="ts">
-	import { mapCtx, type MapContext, type MapEvents } from '$lib';
-	import type { Map, MapOptions } from 'leaflet';
-	import { createEventDispatcher, onDestroy, onMount, setContext, tick } from 'svelte';
-
-	import { updateListeners } from '$lib/util/helpers';
+<script>
+	/**
+	 * @type {import('./LeafletMap.d.ts').LeafletMapProps}
+	 */
+	let { options, children, events } = $props();
 	import 'leaflet/dist/leaflet.css';
-	import { writable } from 'svelte/store';
+	import { setMapContext } from './LeafletMap.svelte.js';
 
-	export let container: HTMLElement;
-	export let options: MapOptions = {
-		center: [0, 0],
-		zoom: 5
-	};
-	export let events: (keyof MapEvents)[] = [];
+	/**
+	 * @type {HTMLDivElement}
+	 */
+	let mapdiv = $state();
 
-	let map = writable<Map | undefined>();
-	let listeners: Set<keyof MapEvents> = new Set();
+	let context = setMapContext();
 
-	export const getMap = async () => {
-		await tick();
-		return $map;
-	};
-
-	setContext<MapContext>(mapCtx, map);
-
-	const dispatch = createEventDispatcher<MapEvents>();
-
-	onMount(async () => {
-		const L = await import('leaflet');
-		$map = window.L.map(container, options);
+	$effect(() => {
+		return () => {
+			context.map?.remove();
+		};
+	});
+	$effect(async () => {
+		if (mapdiv) {
+			const L = await import('leaflet');
+			context.map = L.map(mapdiv, options);
+			context.map.on('resize', () => {
+				context.map.invalidateSize();
+			});
+		}
 	});
 
-	onDestroy(() => {
-		if ($map) $map.remove();
-		container.classList.remove(
-			'leaflet-container',
-			'leaflet-touch',
-			'leaflet-retina',
-			'leaflet-fade-anim'
-		);
-		$map = undefined;
+	//Events Effect
+	$effect(() => {
+		for (const key in events) {
+			if (context.map && events[key]) {
+				context.map.on(key, events[key]);
+			}
+		}
+		return () => {
+			for (const key in events) {
+				context.map?.off(key);
+			}
+		};
 	});
 
-	$: if (events && $map) updateListeners($map, events, listeners, dispatch);
-	$: if($map && options.center) $map.setView(options.center, options.zoom); 
+	$effect(() => {
+		if (options.zoom !== context.map?.getZoom()) {
+			context.map?.setZoom(options.zoom);
+		}
+	});
+	$effect(() => {
+		context.map?.setView(options.center, options.zoom);
+	});
 </script>
 
-{#if $map}
-	<slot />
-{/if}
+<div style="width:100%; height:100%" bind:this={mapdiv}>
+	{#if mapdiv && context.map}
+		{@render children?.()}
+	{/if}
+</div>

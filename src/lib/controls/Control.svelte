@@ -1,28 +1,51 @@
-<script lang="ts">
-	import { controlCtx, mapCtx, type ControlContext, type MapContext } from '$lib';
-	import type { Control, ControlOptions, ControlPosition } from 'leaflet';
-	import { getContext, onDestroy, onMount, setContext, tick } from 'svelte';
-	import { writable } from 'svelte/store';
+<script>
+	import { getMapContext } from '$lib/map/LeafletMap.svelte.js';
+	import { getParent } from '$lib/util/parent.js';
+	import { Control, setControlContext } from './Control.svelte.js';
 
-	export let position: ControlPosition = 'topright';
-	export let options: ControlOptions = {};
+	/**
+	 * @type {import('./Control.d.ts').ControlProps}
+	 */
+	let { options, children } = $props();
 
-	const map = getContext<MapContext>(mapCtx) || undefined;
-	if (!map) throw Error('Control Must be nested within a Map');
+	/**
+	 * @type {HTMLDivElement}
+	 */
+	let content = $state(undefined);
 
-	let control = writable<Control | undefined>();
-	setContext<ControlContext>(controlCtx, control);
+	const parent = getParent();
+	const mapContext = getMapContext();
 
-	onMount(async () => {
-		$control = new window.L.Control(options);
-		if (!$map) await tick();
-		if ($map) $control.addTo($map);
+	const controlCtx = setControlContext();
+
+	$effect(async () => {
+		const L = await import('leaflet');
+		controlCtx.control = new Control(options);
+		controlCtx.control.addTo(mapContext.map);
 	});
 
-	$: if ($control) $control.setPosition(position);
+	$effect(() => {
+		if (content && controlCtx.control) {
+			controlCtx.control?.setPosition(options.position);
+			controlCtx.control?.getContainer()?.appendChild(content);
+		}
+	});
 
-	onDestroy(() => {
-		if ($map) $control?.remove();
-		$control = undefined;
+	$effect(() => {
+		return () => {
+			controlCtx.control?.remove();
+		};
+	});
+
+	$effect(() => {
+		controlCtx.control?.getContainer()?.appendChild(content);
+
+		return () => {
+			// controlCtx.control?.getContainer()?.removeChild(content);
+		};
 	});
 </script>
+
+<div bind:this={content}>
+	{@render children?.()}
+</div>
