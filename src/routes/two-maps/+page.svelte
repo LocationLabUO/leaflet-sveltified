@@ -5,11 +5,22 @@
 	import type { MapOptions } from 'leaflet';
 
 	let options: MapOptions = $state({ center: [0, 0], zoom: 3 });
+
+	let map;
+
+	$effect(() => {
+		if (map.getMap()) {
+			map.getMap().on('dragend', (e) => {
+				console.log('drag on map 1 ended');
+			});
+		}
+	});
 </script>
 
 <div class="map-grid">
 	<div class="map-container">
 		<LeafletMap
+			bind:this={map}
 			{options}
 			events={{
 				drag: (e) => {

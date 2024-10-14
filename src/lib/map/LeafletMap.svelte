@@ -2,7 +2,7 @@
 	/**
 	 * @type {import('./LeafletMap.d.ts').LeafletMapProps}
 	 */
-	let { options, children, events } = $props();
+	let { options, map, children, events } = $props();
 	import 'leaflet/dist/leaflet.css';
 	import { setMapContext } from './LeafletMap.svelte.js';
 
@@ -13,6 +13,10 @@
 
 	let context = setMapContext();
 
+	export const getMap = () => {
+		return context.map;
+	};
+
 	$effect(() => {
 		return () => {
 			context.map?.remove();
@@ -22,6 +26,7 @@
 		if (mapdiv) {
 			const L = await import('leaflet');
 			context.map = L.map(mapdiv, options);
+			map = context.map;
 			context.map.on('resize', () => {
 				context.map.invalidateSize();
 			});
