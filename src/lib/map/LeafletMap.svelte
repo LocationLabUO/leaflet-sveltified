@@ -2,7 +2,7 @@
 	/**
 	 * @type {import('./LeafletMap.d.ts').LeafletMapProps}
 	 */
-	let { options, map, children, events } = $props();
+	let { options, map, children, events, getMap = $bindable() } = $props();
 	import 'leaflet/dist/leaflet.css';
 	import { setMapContext } from './LeafletMap.svelte.js';
 
@@ -13,7 +13,7 @@
 
 	let context = setMapContext();
 
-	export const getMap = () => {
+	getMap = () => {
 		return context.map;
 	};
 

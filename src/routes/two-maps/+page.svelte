@@ -6,11 +6,11 @@
 
 	let options: MapOptions = $state({ center: [0, 0], zoom: 3 });
 
-	let map;
+	let getMap;
 
 	$effect(() => {
-		if (map.getMap()) {
-			map.getMap().on('dragend', (e) => {
+		if (getMap()) {
+			getMap().on('dragend', (e) => {
 				console.log('drag on map 1 ended');
 			});
 		}
@@ -20,7 +20,7 @@
 <div class="map-grid">
 	<div class="map-container">
 		<LeafletMap
-			bind:this={map}
+			bind:getMap
 			{options}
 			events={{
 				drag: (e) => {
