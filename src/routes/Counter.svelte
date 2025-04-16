@@ -11,7 +11,7 @@
 		popup: import('leaflet').Popup;
 	};
 	if (popup) {
-		let popupContext = getPopupContext();
+		popupContext = getPopupContext();
 	}
 </script>
 

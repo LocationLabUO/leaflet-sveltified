@@ -31,14 +31,16 @@
 	});
 
 	$effect(() => {
-		if (open) {
-			if (!context.popup.isOpen()) {
-				parent.openPopup();
-			}
-			context.popup.setContent(content);
-		} else {
-			if (context.popup?.isOpen()) {
-				parent.closePopup();
+		if (context.popup) {
+			if (open) {
+				if (!context.popup.isOpen()) {
+					parent.openPopup();
+				}
+				context.popup.setContent(content);
+			} else {
+				if (context.popup?.isOpen()) {
+					parent.closePopup();
+				}
 			}
 		}
 	});

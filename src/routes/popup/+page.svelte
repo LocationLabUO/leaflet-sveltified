@@ -5,7 +5,7 @@
 	import LeafletMap from '$lib/map/LeafletMap.svelte';
 	import Counter from '../Counter.svelte';
 
-	let open = $state(false);
+	let open = $state(true);
 	let bindAdd = $state(false);
 
 	let count = $state(0);
