@@ -1,7 +1,7 @@
 <script>
 	import { getMapContext } from '$lib/map/LeafletMap.svelte.js';
 	import { getParent } from '$lib/util/parent.js';
-	import { Control, setControlContext } from './Control.svelte.js';
+	import { setControlContext } from './Control.svelte.js';
 
 	/**
 	 * @type {import('./Control.d.ts').ControlProps}
@@ -20,7 +20,7 @@
 
 	$effect(async () => {
 		const L = await import('leaflet');
-		controlCtx.control = new Control(options);
+		controlCtx.control = new L.Control(options);
 		controlCtx.control.addTo(mapContext.map);
 	});
 
