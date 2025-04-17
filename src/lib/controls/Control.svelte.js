@@ -31,6 +31,7 @@ if (BROWSER) {
 				container = L.DomUtil.create('div', className),
 				options = this.options;
 
+			L.DomEvent.disableClickPropagation(container);
 			map.on(options.updateWhenIdle ? 'moveend' : 'move', this._update, this);
 			map.whenReady(this._update, this);
 
