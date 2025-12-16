@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Circle, LeafletMap, Polygon, Popup, TileLayer } from '$lib/index.js';
-	import Polyline from '$lib/layers/vector/Polyline/Polyline.svelte';
+	import { Circle, LeafletMap, Polygon, Polyline, Popup, TileLayer } from '$lib/index.js';
 
 	import type { LatLngExpression } from 'leaflet';
 

@@ -27,11 +27,13 @@
 	});
 
 	$effect(() => {
+		if (!attributions) return;
 		let att = attributions;
 		for (const attribution of att) {
 			attributionControlCtx.attributionControl?.addAttribution(attribution);
 		}
 		return () => {
+			if (!att) return;
 			for (const attribution of att) {
 				attributionControlCtx.attributionControl?.removeAttribution(attribution);
 			}
