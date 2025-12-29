@@ -1,18 +1,23 @@
 <script lang="ts">
-	import { CircleMarker, LeafletMap, Popup, TileLayer } from '$lib/index.js';
+	import { Circle, LeafletMap, Popup, TileLayer } from '$lib/index.js';
+	import type { LatLngExpression } from 'leaflet';
 
-	let radius = $state(10);
+	let lat = $state(44.0449);
+	let lng = $state(-123.0721);
+	let radius = $state(500);
 	let color = $state('#3388ff');
 	let fillColor = $state('#3388ff');
 	let opacity = $state(1);
 	let fillOpacity = $state(0.2);
 	let weight = $state(3);
+
+	let latlng = $derived([lat, lng] as LatLngExpression);
 </script>
 
 <LeafletMap options={{ center: [44.0449, -123.0721], zoom: 11 }}>
 	<TileLayer url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`} />
-	<CircleMarker
-		latlng={[44.0449, -123.0721]}
+	<Circle
+		{latlng}
 		options={{
 			radius,
 			color,
@@ -23,22 +28,22 @@
 		}}
 		events={{
 			click: () => {
-				console.log('CircleMarker clicked!');
+				console.log('Circle clicked!');
 			}
 		}}
 	>
 		<Popup>
 			<div>
-				<h3>CircleMarker Demo</h3>
-				<p>Radius: {radius}px</p>
-				<p>Note: CircleMarker maintains a fixed pixel size regardless of zoom level</p>
+				<h3>Circle Demo</h3>
+				<p>Center: [{lat.toFixed(4)}, {lng.toFixed(4)}]</p>
+				<p>Radius: {radius}m</p>
 			</div>
 		</Popup>
-	</CircleMarker>
-	<CircleMarker
+	</Circle>
+	<Circle
 		latlng={[44.0509, -123.0651]}
 		options={{
-			radius: 15,
+			radius: 300,
 			color: '#ff0000',
 			fillColor: '#ff0000',
 			opacity: 0.8,
@@ -48,15 +53,15 @@
 	>
 		<Popup>
 			<div>
-				<h3>Another CircleMarker</h3>
-				<p>Fixed size marker</p>
+				<h3>Another Circle</h3>
+				<p>Fixed radius example</p>
 			</div>
 		</Popup>
-	</CircleMarker>
-	<CircleMarker
+	</Circle>
+	<Circle
 		latlng={[44.0389, -123.0791]}
 		options={{
-			radius: 8,
+			radius: 150,
 			color: '#00ff00',
 			fillColor: '#00ff00',
 			opacity: 1,
@@ -66,19 +71,26 @@
 	>
 		<Popup>
 			<div>
-				<h3>Small CircleMarker</h3>
+				<h3>Small Circle</h3>
 				<p>Small radius example</p>
 			</div>
 		</Popup>
-	</CircleMarker>
+	</Circle>
 </LeafletMap>
 
 <div class="overlay">
-	<h3>CircleMarker Controls</h3>
+	<h3>Circle Controls</h3>
 	<div>
-		<label for="radius">Radius (px):</label>
-		<input type="range" min="5" max="50" step="1" bind:value={radius} />
-		<span>{radius}</span>
+		<label for="lat">Latitude:</label>
+		<input type="number" step="0.0001" bind:value={lat} />
+	</div>
+	<div>
+		<label for="lng">Longitude:</label>
+		<input type="number" step="0.0001" bind:value={lng} />
+	</div>
+	<div>
+		<label for="radius">Radius (meters):</label>
+		<input type="number" step="10" min="1" bind:value={radius} />
 	</div>
 	<div>
 		<label for="color">Color:</label>
@@ -142,4 +154,10 @@
 		width: 100%;
 		height: 30px;
 	}
+
+	.overlay input[type='number'] {
+		width: 100%;
+		padding: 4px;
+	}
 </style>
+

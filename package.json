@@ -13,7 +13,7 @@
 	],
 	"description": "Svelte Wrapper for Leaflet",
 	"repository": {
-		"url": "https://github.com/locationlabuo/leaflet-sveltified.git"
+		"url": "git+https://github.com/locationlabuo/leaflet-sveltified.git"
 	},
 	"scripts": {
 		"dev": "vite dev",

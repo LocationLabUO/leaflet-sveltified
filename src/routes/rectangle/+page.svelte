@@ -1,20 +1,25 @@
 <script lang="ts">
-	import { CircleMarker, LeafletMap, Popup, TileLayer } from '$lib/index.js';
+	import { LeafletMap, Popup, Rectangle, TileLayer } from '$lib/index.js';
+	import type { LatLngBoundsExpression } from 'leaflet';
 
-	let radius = $state(10);
+	let southWestLat = $state(44.0389);
+	let southWestLng = $state(-123.0821);
+	let northEastLat = $state(44.0509);
+	let northEastLng = $state(-123.0621);
 	let color = $state('#3388ff');
 	let fillColor = $state('#3388ff');
 	let opacity = $state(1);
 	let fillOpacity = $state(0.2);
 	let weight = $state(3);
+
+	let bounds = $derived([[southWestLat, southWestLng], [northEastLat, northEastLng]]);
 </script>
 
 <LeafletMap options={{ center: [44.0449, -123.0721], zoom: 11 }}>
 	<TileLayer url={`https://tile.openstreetmap.org/{z}/{x}/{y}.png`} />
-	<CircleMarker
-		latlng={[44.0449, -123.0721]}
+	<Rectangle
+		{bounds}
 		options={{
-			radius,
 			color,
 			fillColor,
 			opacity,
@@ -23,22 +28,21 @@
 		}}
 		events={{
 			click: () => {
-				console.log('CircleMarker clicked!');
+				console.log('Rectangle clicked!');
 			}
 		}}
 	>
 		<Popup>
 			<div>
-				<h3>CircleMarker Demo</h3>
-				<p>Radius: {radius}px</p>
-				<p>Note: CircleMarker maintains a fixed pixel size regardless of zoom level</p>
+				<h3>Rectangle Demo</h3>
+				<p>Southwest: [{southWestLat.toFixed(4)}, {southWestLng.toFixed(4)}]</p>
+				<p>Northeast: [{northEastLat.toFixed(4)}, {northEastLng.toFixed(4)}]</p>
 			</div>
 		</Popup>
-	</CircleMarker>
-	<CircleMarker
-		latlng={[44.0509, -123.0651]}
+	</Rectangle>
+	<Rectangle
+		bounds={[[44.0509, -123.0751], [44.0569, -123.0651]]}
 		options={{
-			radius: 15,
 			color: '#ff0000',
 			fillColor: '#ff0000',
 			opacity: 0.8,
@@ -48,15 +52,14 @@
 	>
 		<Popup>
 			<div>
-				<h3>Another CircleMarker</h3>
-				<p>Fixed size marker</p>
+				<h3>Another Rectangle</h3>
+				<p>Fixed bounds example</p>
 			</div>
 		</Popup>
-	</CircleMarker>
-	<CircleMarker
-		latlng={[44.0389, -123.0791]}
+	</Rectangle>
+	<Rectangle
+		bounds={[[44.0409, -123.0781], [44.0449, -123.0741]]}
 		options={{
-			radius: 8,
 			color: '#00ff00',
 			fillColor: '#00ff00',
 			opacity: 1,
@@ -66,19 +69,30 @@
 	>
 		<Popup>
 			<div>
-				<h3>Small CircleMarker</h3>
-				<p>Small radius example</p>
+				<h3>Small Rectangle</h3>
+				<p>Small bounds example</p>
 			</div>
 		</Popup>
-	</CircleMarker>
+	</Rectangle>
 </LeafletMap>
 
 <div class="overlay">
-	<h3>CircleMarker Controls</h3>
+	<h3>Rectangle Controls</h3>
 	<div>
-		<label for="radius">Radius (px):</label>
-		<input type="range" min="5" max="50" step="1" bind:value={radius} />
-		<span>{radius}</span>
+		<label for="southWestLat">Southwest Lat:</label>
+		<input type="number" step="0.001" bind:value={southWestLat} />
+	</div>
+	<div>
+		<label for="southWestLng">Southwest Lng:</label>
+		<input type="number" step="0.001" bind:value={southWestLng} />
+	</div>
+	<div>
+		<label for="northEastLat">Northeast Lat:</label>
+		<input type="number" step="0.001" bind:value={northEastLat} />
+	</div>
+	<div>
+		<label for="northEastLng">Northeast Lng:</label>
+		<input type="number" step="0.001" bind:value={northEastLng} />
 	</div>
 	<div>
 		<label for="color">Color:</label>
@@ -142,4 +156,10 @@
 		width: 100%;
 		height: 30px;
 	}
+
+	.overlay input[type='number'] {
+		width: 100%;
+		padding: 4px;
+	}
 </style>
+

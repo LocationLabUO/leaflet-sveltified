@@ -27,6 +27,7 @@ import {
     Polygon,
     Polyline,
     Popup,
+    Rectangle,
     TileLayer,
     Tooltip,
     getCircleContext,
@@ -41,6 +42,7 @@ import {
     getPolygonContext,
     getPolylineContext,
     getPopupContext,
+    getRectangleContext,
     getTooltipContext
 } from './layers/index.js';
 
@@ -60,6 +62,7 @@ export {
     Polygon,
     Polyline,
     Popup,
+    Rectangle,
     ScaleControl,
     TileLayer,
     Tooltip,
@@ -79,6 +82,7 @@ export {
     getPolygonContext,
     getPolylineContext,
     getPopupContext,
+    getRectangleContext,
     getScaleControlContext,
     getTooltipContext,
     getZoomControlContext

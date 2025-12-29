@@ -1,9 +1,11 @@
 <script lang="ts">
+	import DemoNav from './DemoNav.svelte';
 	let { children } = $props();
 </script>
 
 <div class="container">
 	{@render children()}
+	<DemoNav />
 </div>
 
 <style>

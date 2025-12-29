@@ -12,6 +12,7 @@ import Circle from './vector/Circle/Circle.svelte';
 import CircleMarker from './vector/CircleMarker/CircleMarker.svelte';
 import Polygon from './vector/Polygon/Polygon.svelte';
 import Polyline from './vector/Polyline/Polyline.svelte';
+import Rectangle from './vector/Rectangle/Rectangle.svelte';
 
 import { getFeatureGroupContext } from './FeatureGroup/FeatureGroup.svelte.js';
 import { getGeoJSONContext } from './GeoJSON/GeoJSON.svelte.js';
@@ -26,6 +27,7 @@ import { getCircleMarkerContext } from './vector/CircleMarker/CircleMarker.svelt
 import { getPathContext } from './vector/Path.svelte.js';
 import { getPolygonContext } from './vector/Polygon/Polygon.svelte.js';
 import { getPolylineContext } from './vector/Polyline/Polyline.svelte.js';
+import { getRectangleContext } from './vector/Rectangle/Rectangle.svelte.js';
 
 export {
     Circle,
@@ -46,6 +48,7 @@ export {
     getPolygonContext,
     getPolylineContext,
     getPopupContext,
+    getRectangleContext,
     getTooltipContext,
     Icon,
     LayerGroup,
@@ -53,6 +56,7 @@ export {
     Polygon,
     Polyline,
     Popup,
+    Rectangle,
     TileLayer,
     Tooltip
 };
