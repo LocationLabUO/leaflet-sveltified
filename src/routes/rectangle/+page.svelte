@@ -12,7 +12,7 @@
 	let fillOpacity = $state(0.2);
 	let weight = $state(3);
 
-	let bounds = $derived([[southWestLat, southWestLng], [northEastLat, northEastLng]]);
+	let bounds = $derived<LatLngBoundsExpression>([[southWestLat, southWestLng], [northEastLat, northEastLng]]);
 </script>
 
 <LeafletMap options={{ center: [44.0449, -123.0721], zoom: 11 }}>

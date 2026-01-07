@@ -1,7 +1,8 @@
 <script>
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
 	import { getMapContext } from '$lib/map/LeafletMap.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { DivOverlay, setDivOverlayContext } from './DivOverlay.svelte.js';
 
@@ -10,78 +11,78 @@
 	 */
 	let { open = $bindable(false), latlng, options, events, children } = $props();
 
-	const parent = getParent();
 	const mapContext = getMapContext();
 	const context = setDivOverlayContext();
 	const layerCtx = setLayerContext();
 
 	let content = $state(undefined);
 
-	$effect(() => {});
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		if (latlng) {
-			context.divOverlay = new DivOverlay(latlng, options);
-		} else {
-			context.divOverlay = new DivOverlay(options);
-		}
-		layerCtx.layer = context.divOverlay;
-		context.divOverlay.on('add', () => {
-			open = true;
-		});
-		context.divOverlay.on('remove', () => {
-			open = false;
-		});
-	});
+	// Internal event handlers for syncing open state
+	const onAdd = () => {
+		open = true;
+	};
+	const onRemove = () => {
+		open = false;
+	};
 
+	// Initialization effect - only depends on map, not options/latlng
+	// Options and latlng are read with untrack since they're only used at creation time
+	// (latlng updates are handled by a separate reactive effect)
 	$effect(() => {
-		if (open) {
-			if (!context.divOverlay?.isOpen()) {
-				context.divOverlay?.openOn(mapContext.map);
-			}
-			context.divOverlay?.setContent(content);
-		} else {
-			if (context.divOverlay?.isOpen()) {
-				context.divOverlay.close();
-			}
-		}
-	});
+		const map = mapContext?.map;
 
-	//events Effect
-	$effect(() => {
-		if (context.divOverlay) {
-			for (const key in events) {
-				if (context.divOverlay && events[key]) {
-					context.divOverlay.on(key, events[key]);
-				}
-			}
-			return () => {
-				for (const key in events) {
-					context.divOverlay?.off(key);
-					//Re-add add and remove events
-					if (key == 'add') {
-						context.divOverlay.on('add', () => {
-							open = true;
-						});
-					}
-					if (key == 'remove') {
-						context.divOverlay.on('remove', () => {
-							open = false;
-						});
-					}
-				}
-			};
-		}
-	});
+		if (!map) return;
 
-	$effect(() => {
+		(async () => {
+			// Read options/latlng inside untrack to avoid re-running effect when object references change
+			const currentLatlng = untrack(() => latlng);
+			const currentOptions = untrack(() => options);
+
+			if (currentLatlng) {
+				context.divOverlay = new DivOverlay(currentLatlng, currentOptions);
+			} else {
+				context.divOverlay = new DivOverlay(currentOptions);
+			}
+			layerCtx.layer = context.divOverlay;
+
+			context.divOverlay.on('add', onAdd);
+			context.divOverlay.on('remove', onRemove);
+		})();
+
 		return () => {
-			context.divOverlay.off('add');
-			context.divOverlay.off('remove');
+			context.divOverlay?.off('add', onAdd);
+			context.divOverlay?.off('remove', onRemove);
+			context.divOverlay = undefined;
 		};
 	});
 
+	// Open/close state effect
+	$effect(() => {
+		const divOverlay = context.divOverlay;
+		const map = mapContext?.map;
+		const currentContent = content;
+
+		if (!divOverlay || !map) return;
+
+		if (open) {
+			if (!divOverlay.isOpen()) {
+				divOverlay.openOn(map);
+			}
+			divOverlay.setContent(currentContent);
+		} else {
+			if (divOverlay.isOpen()) {
+				divOverlay.close();
+			}
+		}
+	});
+
+	// User events effect
+	$effect(() => {
+		if (!context.divOverlay) return;
+		return setupEvents(context.divOverlay, events);
+	});
+
+	// Reactive latlng update
 	$effect(() => {
 		if (latlng) {
 			context.divOverlay?.setLatLng(latlng);
@@ -89,7 +90,6 @@
 	});
 </script>
 
-<!-- svelte-ignore perf_avoid_nested_class -->
 <!-- svelte-ignore perf_avoid_nested_class -->
 {#if open}
 	<div bind:this={content} out:fade>

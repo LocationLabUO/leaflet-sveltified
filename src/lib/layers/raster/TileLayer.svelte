@@ -1,5 +1,7 @@
 <script>
-	import { getParent } from '$lib/util/parent.js';
+	import { untrack } from 'svelte';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
 	import { setLayerContext } from '../Layer.svelte.js';
 
 	/**
@@ -7,39 +9,39 @@
 	 */
 	let { url, options, events, children } = $props();
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setLayerContext();
 
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.layer = new L.tileLayer(url, { ...options });
-		context.layer.addTo(parent);
-	});
-
-	//onDestroy
+	// Initialization effect - only depends on parent
+	// Props are read with untrack since they're only used at creation time
+	// (reactive updates are handled by separate effects below)
 	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read props inside untrack to avoid re-running effect when object references change
+			const currentUrl = untrack(() => url);
+			const currentOptions = untrack(() => options);
+			context.layer = new L.TileLayer(currentUrl, { ...currentOptions });
+			context.layer.addTo(parent);
+		})();
+
 		return () => {
-			context.layer?.removeFrom(parent);
+			context.layer?.remove();
+			context.layer = undefined;
 		};
 	});
 
-	//Events Effect
+	// Events effect
 	$effect(() => {
-		if (context.layer) {
-			for (const key in events) {
-				if (context.layer && events[key]) {
-					context.layer.on(key, events[key]);
-				}
-			}
-			return () => {
-				for (const key in events) {
-					context.layer?.off(key);
-				}
-			};
-		}
+		if (!context.layer) return;
+		return setupEvents(context.layer, events);
 	});
 
+	// Reactive updates
 	$effect(() => {
 		context.layer?.setUrl(url);
 	});

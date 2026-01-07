@@ -1,33 +1,47 @@
 <script>
+	import { untrack } from 'svelte';
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
 	import { setPathContext } from '../Path.svelte.js';
 	import { setCircleMarkerContext } from './CircleMarker.svelte.js';
 
-	let parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setCircleMarkerContext();
 	const pathContext = setPathContext();
 	const layerContext = setLayerContext();
-	//path context
+
 	/**
 	 * @type {import('./CircleMarker.d.ts').CircleMarkerProps}
 	 */
 	let { latlng, options, events, children } = $props();
 
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.circleMarker = L.circleMarker(latlng, options);
-		layerContext.layer = context.circleMarker;
-		pathContext.path = context.circleMarker;
-		context.circleMarker.addTo(parent);
-	});
-
+	// Initialization effect - only depends on parent
+	// Props are read with untrack since they're only used at creation time
+	// (reactive updates are handled by separate effects below)
 	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read props inside untrack to avoid re-running effect when object references change
+			const currentLatlng = untrack(() => latlng);
+			const currentOptions = untrack(() => options);
+			context.circleMarker = L.circleMarker(currentLatlng, currentOptions);
+			layerContext.layer = context.circleMarker;
+			pathContext.path = context.circleMarker;
+			context.circleMarker.addTo(parent);
+		})();
+
 		return () => {
 			context.circleMarker?.remove();
+			context.circleMarker = undefined;
 		};
 	});
 
+	// Reactive updates
 	$effect(() => {
 		context.circleMarker?.setLatLng(latlng);
 	});
@@ -40,19 +54,10 @@
 		context.circleMarker?.setStyle({ ...options });
 	});
 
-	// Events Effect
+	// Events effect
 	$effect(() => {
-		for (const key in events) {
-			if (context.circleMarker && events[key]) {
-				context.circleMarker.on(key, events[key]);
-			}
-		}
-
-		return () => {
-			for (const key in events) {
-				context.circleMarker?.off(key);
-			}
-		};
+		if (!context.circleMarker) return;
+		return setupEvents(context.circleMarker, events);
 	});
 </script>
 

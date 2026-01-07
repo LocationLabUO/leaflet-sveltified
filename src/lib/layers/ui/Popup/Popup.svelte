@@ -1,6 +1,8 @@
 <script>
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
+	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { setPopupContext } from './Popup.svelte.js';
 
@@ -9,76 +11,72 @@
 	 */
 	let { open = $bindable(false), options, events, children } = $props();
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setPopupContext();
 	const layerCtx = setLayerContext();
 
 	let content = $state(undefined);
 
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.popup = L.popup(options);
-		layerCtx.layer = context.popup;
-		context.popup.on('add', () => {
-			open = true;
-		});
-		context.popup.on('remove', () => {
-			open = false;
-		});
+	// Internal event handlers for syncing open state
+	const onAdd = () => {
+		open = true;
+	};
+	const onRemove = () => {
+		open = false;
+	};
 
-		parent.bindPopup(context.popup);
-	});
-
+	// Initialization effect - only depends on parent, not options
+	// Options are read with untrack since they're only used at creation time
 	$effect(() => {
-		if (context.popup) {
-			if (open) {
-				if (!context.popup.isOpen()) {
-					parent.openPopup();
-				}
-				context.popup.setContent(content);
-			} else {
-				if (context.popup?.isOpen()) {
-					parent.closePopup();
-				}
-			}
-		}
-	});
+		const parent = getParentValue();
 
-	$effect(() => {
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read options inside untrack to avoid re-running effect when options object reference changes
+			const currentOptions = untrack(() => options);
+			context.popup = L.popup(currentOptions);
+			layerCtx.layer = context.popup;
+
+			context.popup.on('add', onAdd);
+			context.popup.on('remove', onRemove);
+
+			parent.bindPopup(context.popup);
+		})();
+
 		return () => {
-			context.popup.off('add');
-			context.popup.off('remove');
+			context.popup?.off('add', onAdd);
+			context.popup?.off('remove', onRemove);
 			parent?.unbindPopup();
+			context.popup = undefined;
 		};
 	});
 
-	//events Effect
+	// Open/close state effect
 	$effect(() => {
-		if (context.popup) {
-			for (const key in events) {
-				if (context.popup && events[key]) {
-					context.popup.on(key, events[key]);
-				}
-			}
-			return () => {
-				for (const key in events) {
-					context.popup?.off(key);
+		const popup = context.popup;
+		const parent = getParentValue();
+		const currentContent = content;
 
-					//Re-add add and remove events
-					if (key == 'add') {
-						context.popup.on('add', () => {
-							open = true;
-						});
-					}
-					if (key == 'remove') {
-						context.popup.on('remove', () => {
-							open = false;
-						});
-					}
-				}
-			};
+		if (!popup || !parent) return;
+
+		if (open) {
+			if (!popup.isOpen()) {
+				parent.openPopup();
+			}
+			popup.setContent(currentContent);
+		} else {
+			if (popup.isOpen()) {
+				parent.closePopup();
+			}
 		}
+	});
+
+	// User events effect
+	$effect(() => {
+		if (!context.popup) return;
+		return setupEvents(context.popup, events);
 	});
 </script>
 

@@ -1,10 +1,12 @@
 <script>
+	import { untrack } from 'svelte';
 	import { setFeatureGroupContext } from '$lib/layers/FeatureGroup/FeatureGroup.svelte.js';
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
 	import { setGeoJSONContext } from './GeoJSON.svelte.js';
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setGeoJSONContext();
 	const layerContext = setLayerContext();
 	const featureGroupContext = setFeatureGroupContext();
@@ -14,35 +16,34 @@
 	 */
 	let { data, options, events, children } = $props();
 
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.geoJSON = L.geoJSON(data, options);
-		layerContext.layer = context.geoJSON;
-		featureGroupContext.featureGroup = context.geoJSON;
-		context.geoJSON.addTo(parent);
-	});
-
-	//onDestroy
+	// Initialization effect - only depends on parent
+	// Props are read with untrack since they're only used at creation time
 	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read props inside untrack to avoid re-running effect when object references change
+			const currentData = untrack(() => data);
+			const currentOptions = untrack(() => options);
+			context.geoJSON = L.geoJSON(currentData, currentOptions);
+			layerContext.layer = context.geoJSON;
+			featureGroupContext.featureGroup = context.geoJSON;
+			context.geoJSON.addTo(parent);
+		})();
+
 		return () => {
-			if (context.geoJSON) {
-				context.geoJSON.remove();
-			}
+			context.geoJSON?.remove();
+			context.geoJSON = undefined;
 		};
 	});
 
-	//Events Effect
+	// Events effect
 	$effect(() => {
-		for (const key in events) {
-			if (context.geoJSON && events[key]) {
-				context.geoJSON.on(key, events[key]);
-			}
-		}
-		return () => {
-			for (const key in events) {
-				context.geoJSON?.off(key);
-			}
-		};
+		if (!context.geoJSON) return;
+		return setupEvents(context.geoJSON, events);
 	});
 </script>
 

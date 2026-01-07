@@ -1,5 +1,7 @@
 <script>
-	import { getParent } from '../../util/parent.js';
+	import { untrack } from 'svelte';
+	import { setupEvents } from '../../util/events.js';
+	import { getParentContext } from '../../util/parent.js';
 	import { setLayerContext } from '../Layer.svelte.js';
 	import { setLayerGroupContext } from './LayerGroups.svelte.js';
 
@@ -8,39 +10,36 @@
 	 */
 	let { options, events, children } = $props();
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setLayerGroupContext();
 	const layerContext = setLayerContext();
 
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.layerGroup = L.layerGroup([], options);
-		layerContext.layer = context.layerGroup;
-		context.layerGroup.addTo(parent);
-	});
-
-	//onDestroy
+	// Initialization effect - only depends on parent
+	// Props are read with untrack since they're only used at creation time
 	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read props inside untrack to avoid re-running effect when object references change
+			const currentOptions = untrack(() => options);
+			context.layerGroup = L.layerGroup([], currentOptions);
+			layerContext.layer = context.layerGroup;
+			context.layerGroup.addTo(parent);
+		})();
+
 		return () => {
-			if (context.layerGroup) {
-				context.layerGroup.remove();
-			}
+			context.layerGroup?.remove();
+			context.layerGroup = undefined;
 		};
 	});
 
-	//Events Effect
+	// Events effect
 	$effect(() => {
-		for (const key in events) {
-			if (context.layerGroup && events[key]) {
-				context.layerGroup.on(key, events[key]);
-			}
-		}
-		return () => {
-			for (const key in events) {
-				context.layerGroup?.off(key);
-			}
-		};
+		if (!context.layerGroup) return;
+		return setupEvents(context.layerGroup, events);
 	});
 </script>
 

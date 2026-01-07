@@ -15,20 +15,40 @@
 
 	let shown = $state(true);
 
+	// Read reactive dependencies synchronously before async work
 	$effect(() => {
-		const icon = markerContext.marker?.setIcon(
-			L.divIcon({
-				...options,
-				html: options.html ? options.html : '',
-				className: options.className ? options.className : ''
-			})
-		);
-		icon.on('add', () => {
+		const currentOptions = options;
+		const marker = markerContext.marker;
+
+		if (!marker) return;
+
+		const onAdd = () => {
 			shown = true;
-		});
-		icon.on('remove', () => {
+		};
+		const onRemove = () => {
 			shown = false;
-		});
+		};
+
+		// Async work in IIFE so effect stays synchronous for proper cleanup
+		(async () => {
+			const L = await import('leaflet');
+			marker.setIcon(
+				L.divIcon({
+					...currentOptions,
+					html: currentOptions.html ? currentOptions.html : '',
+					className: currentOptions.className ? currentOptions.className : ''
+				})
+			);
+		})();
+
+		marker.on('add', onAdd);
+		marker.on('remove', onRemove);
+
+		// Cleanup event listeners when effect re-runs or component unmounts
+		return () => {
+			marker.off('add', onAdd);
+			marker.off('remove', onRemove);
+		};
 	});
 </script>
 

@@ -8,7 +8,17 @@
 	 */
 	let { options } = $props();
 
+	// Read reactive dependencies synchronously before async work
 	$effect(() => {
-		markerContext.marker?.setIcon(L.icon(options));
+		const currentOptions = options;
+		const marker = markerContext.marker;
+
+		if (!marker) return;
+
+		// Async work in IIFE so effect stays synchronous for proper cleanup
+		(async () => {
+			const L = await import('leaflet');
+			marker.setIcon(L.icon(currentOptions));
+		})();
 	});
 </script>

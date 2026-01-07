@@ -1,6 +1,8 @@
 <script>
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
+	import { untrack } from 'svelte';
 	import { setMarkerContext } from './Marker.svelte.js';
 
 	/**
@@ -8,51 +10,53 @@
 	 */
 	let { latlng, options, events, icon, children } = $props();
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 
 	const context = setMarkerContext();
 	const layerContext = setLayerContext();
 
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.marker = L.marker(latlng, {
-			...options,
-			icon: icon
-				? L.divIcon({ className: '' })
-				: options?.icon
-					? options.icon
-					: new L.Icon.Default()
-		});
-		layerContext.layer = context.marker;
-		context.marker.addTo(parent);
-	});
-
-	//onDestroy
+	// Initialization effect - only depends on parent
+	// Props are read with untrack since they're only used at creation time
+	// (reactive updates are handled by separate effects below)
 	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read props inside untrack to avoid re-running effect when object references change
+			const currentLatlng = untrack(() => latlng);
+			const currentOptions = untrack(() => options);
+			const hasCustomIcon = untrack(() => !!icon);
+
+			context.marker = L.marker(currentLatlng, {
+				...currentOptions,
+				icon: hasCustomIcon
+					? L.divIcon({ className: '' })
+					: currentOptions?.icon
+						? currentOptions.icon
+						: new L.Icon.Default()
+			});
+			layerContext.layer = context.marker;
+			context.marker.addTo(parent);
+		})();
+
 		return () => {
 			if (context.marker) {
 				context.marker.remove();
+				context.marker = undefined;
 			}
 		};
 	});
 
-	//Events Effect
+	// Events effect
 	$effect(() => {
-		if (context.marker) {
-			for (const key in events) {
-				if (context.marker && events[key]) {
-					context.marker.on(key, events[key]);
-				}
-			}
-			return () => {
-				for (const key in events) {
-					context.marker?.off(key);
-				}
-			};
-		}
+		if (!context.marker) return;
+		return setupEvents(context.marker, events);
 	});
 
+	// Reactive property updates
 	$effect(() => {
 		context.marker?.setLatLng(latlng);
 	});

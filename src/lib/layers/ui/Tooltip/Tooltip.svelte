@@ -1,6 +1,8 @@
 <script>
 	import { setLayerContext } from '$lib/layers/Layer.svelte.js';
-	import { getParent } from '$lib/util/parent.js';
+	import { setupEvents } from '$lib/util/events.js';
+	import { getParentContext } from '$lib/util/parent.js';
+	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { setTooltipContext } from './Tooltip.svelte.js';
 
@@ -9,74 +11,72 @@
 	 */
 	let { open = $bindable(false), options, events, children } = $props();
 
-	const parent = getParent();
+	const { getParentValue } = getParentContext();
 	const context = setTooltipContext();
 	const layerCtx = setLayerContext();
 
 	let content = $state(undefined);
 
-	$effect(() => {});
-	//onMount
-	$effect(async () => {
-		const L = await import('leaflet');
-		context.tooltip = L.tooltip(options);
-		layerCtx.layer = context.tooltip;
-		context.tooltip.on('add', () => {
-			open = true;
-		});
-		context.tooltip.on('remove', () => {
-			open = false;
-		});
+	// Internal event handlers for syncing open state
+	const onAdd = () => {
+		open = true;
+	};
+	const onRemove = () => {
+		open = false;
+	};
 
-		parent.bindTooltip(context.tooltip);
+	// Initialization effect - only depends on parent, not options
+	// Options are read with untrack since they're only used at creation time
+	$effect(() => {
+		const parent = getParentValue();
+
+		if (!parent) return;
+
+		(async () => {
+			const L = await import('leaflet');
+			// Read options inside untrack to avoid re-running effect when options object reference changes
+			const currentOptions = untrack(() => options);
+			context.tooltip = L.tooltip(currentOptions);
+			layerCtx.layer = context.tooltip;
+
+			context.tooltip.on('add', onAdd);
+			context.tooltip.on('remove', onRemove);
+
+			parent.bindTooltip(context.tooltip);
+		})();
+
+		return () => {
+			context.tooltip?.off('add', onAdd);
+			context.tooltip?.off('remove', onRemove);
+			parent?.unbindTooltip();
+			context.tooltip = undefined;
+		};
 	});
 
+	// Open/close state effect
 	$effect(() => {
+		const tooltip = context.tooltip;
+		const parent = getParentValue();
+		const currentContent = content;
+
+		if (!tooltip || !parent) return;
+
 		if (open) {
-			if (!context.tooltip.isOpen()) {
+			if (!tooltip.isOpen()) {
 				parent.openTooltip();
 			}
-			context.tooltip.setContent(content);
+			tooltip.setContent(currentContent);
 		} else {
-			if (context.tooltip?.isOpen()) {
+			if (tooltip.isOpen()) {
 				parent.closeTooltip();
 			}
 		}
 	});
 
+	// User events effect
 	$effect(() => {
-		return () => {
-			context.tooltip.off('add');
-			context.tooltip.off('remove');
-			parent?.unbindTooltip();
-		};
-	});
-
-	//events Effect
-	$effect(() => {
-		if (context.tooltip) {
-			for (const key in events) {
-				if (context.tooltip && events[key]) {
-					context.tooltip.on(key, events[key]);
-				}
-			}
-			return () => {
-				for (const key in events) {
-					context.tooltip?.off(key);
-					//Re-add add and remove events
-					if (key == 'add') {
-						context.tooltip.on('add', () => {
-							open = true;
-						});
-					}
-					if (key == 'remove') {
-						context.tooltip.on('remove', () => {
-							open = false;
-						});
-					}
-				}
-			};
-		}
+		if (!context.tooltip) return;
+		return setupEvents(context.tooltip, events);
 	});
 </script>
 
