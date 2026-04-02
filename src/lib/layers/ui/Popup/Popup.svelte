@@ -46,9 +46,12 @@
 		})();
 
 		return () => {
+			// Close first so Leaflet detaches map listeners before the binding is dropped.
+			context.popup?.close?.();
 			context.popup?.off('add', onAdd);
 			context.popup?.off('remove', onRemove);
-			parent?.unbindPopup();
+			parent?.unbindPopup?.();
+			layerCtx.layer = undefined;
 			context.popup = undefined;
 		};
 	});
